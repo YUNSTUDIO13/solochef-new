@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Long+Cang&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-sage-50: #f7f9f6;
+  --color-sage-100: #f2f6f0;
+  --color-sage-200: #e5ede2;
+  --color-sage-300: #8ba18b;
+  --color-sage-400: #6a7f6a;
+  --color-sage-500: #4a5c4a;
+  --color-sage-800: #2d3a2d;
+  --color-sage-900: #1a241a;
+  
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-handwriting: "Long Cang", "Ma Shan Zheng", "Zhi Mang Xing", cursive;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

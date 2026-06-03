@@ -1,0 +1,29 @@
+# Node
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.iml
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+Thumbs.db

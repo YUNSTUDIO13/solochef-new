@@ -1,0 +1,6 @@
+{
+  "name": "SoloChef (独厨)",
+  "description": "私有、移动优先的烹饪履约系统，支持双轨执行看板与物理按键映射。",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
