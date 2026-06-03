@@ -58,7 +58,7 @@ export default function LibraryView({ recipes, onSelect, onCreateClick }: Librar
     <div className="min-h-screen bg-sage-100 text-sage-900 p-6 flex flex-col pb-44">
       <header className="mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-black tracking-tighter text-sage-900 uppercase">菜谱库</h1>
+          <h1 className="text-6xl font-black tracking-tighter text-sage-900 uppercase">菜谱库</h1>
           <p className="text-sage-500 font-mono text-xs mt-1 uppercase tracking-widest">TOTAL_RECORDS: {filteredRecipes.length}</p>
         </div>
       </header>
@@ -228,7 +228,7 @@ export default function LibraryView({ recipes, onSelect, onCreateClick }: Librar
                     <h3 className="text-sm font-black text-sage-900 truncate tracking-tight">{recipe.name}</h3>
                     {recipe.is_featured && (
                       <div className="bg-amber-400 w-5 h-5 rounded-full flex items-center justify-center shrink-0">
-                        <span className="text-[8px] font-black text-sage-900 italic">荐</span>
+                        <span className="text-[8px] font-black text-sage-900 leading-none text-center w-full">荐</span>
                       </div>
                     )}
                   </div>

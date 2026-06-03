@@ -86,7 +86,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(24.dp))
 
         // Header
-        Text("独厨中心", fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
+        Text("独厨中心", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
         Text("SoloChef Operational Center // v1.6", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 8.dp))
 
         Spacer(Modifier.height(24.dp))

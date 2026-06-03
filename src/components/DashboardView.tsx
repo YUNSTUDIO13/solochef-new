@@ -72,7 +72,7 @@ export default function DashboardView({ recipes, activeBatch, onPlaceOrder, onOp
   return (
     <div className="min-h-screen bg-sage-100 p-6 pb-48 space-y-6">
       <header>
-        <h1 className="text-3xl font-black tracking-tighter text-sage-900">独厨SoloChef</h1>
+        <h1 className="text-6xl font-black tracking-tighter text-sage-900">独厨SoloChef</h1>
         <p className="text-sage-500 font-mono text-[10px] uppercase tracking-widest mt-1">你的精品线上厨房</p>
       </header>
  
@@ -93,9 +93,6 @@ export default function DashboardView({ recipes, activeBatch, onPlaceOrder, onOp
               <div className="flex-1 text-center px-2">
                 <h2 className="text-base font-black text-sage-900 tracking-tight leading-tight">精品厨房空闲中</h2>
                 <p className="text-[9px] text-sage-400 font-medium">开启今日美味</p>
-                <div className="mt-3 bg-sage-900 text-white w-fit mx-auto px-4 py-2 rounded-full text-[8px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1 group-hover:bg-sage-700 transition-colors">
-                  去点单 <ChevronRight size={10} />
-                </div>
               </div>
             </div>
 

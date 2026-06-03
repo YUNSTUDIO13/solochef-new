@@ -25,10 +25,10 @@ export default function FeedbackView({ recipe, activeBatch, onDone }: FeedbackVi
     return sentences[randomIndex];
   });
 
-  // Calculate ticket number sequence (starting at 0001, increments on each done)
-  const [ticketNo, setTicketNo] = useState("0001");
+  // Calculate table number sequence (starting at 0001, increments on each done)
+  const [tableNo, setTableNo] = useState("0001");
   useEffect(() => {
-    const stored = localStorage.getItem('solochef_ticket_counter');
+    const stored = localStorage.getItem('solochef_table_counter');
     let nextVal = 1;
     if (stored) {
       const parsed = parseInt(stored, 10);
@@ -36,8 +36,8 @@ export default function FeedbackView({ recipe, activeBatch, onDone }: FeedbackVi
         nextVal = parsed + 1;
       }
     }
-    localStorage.setItem('solochef_ticket_counter', String(nextVal));
-    setTicketNo(String(nextVal).padStart(4, '0'));
+    localStorage.setItem('solochef_table_counter', String(nextVal));
+    setTableNo(String(nextVal).padStart(4, '0'));
   }, []);
 
   // Generate random price state (Integer e.g. 18 to 118) to avoid re-render shifting
@@ -106,12 +106,12 @@ export default function FeedbackView({ recipe, activeBatch, onDone }: FeedbackVi
             </div>
           </div>
 
-          {/* 3. High-visibility Ticket Numbers */}
+          {/* 3. High-visibility Table Numbers */}
           <div className="text-center pb-5 border-b border-dashed border-stone-300">
             <h2 className="text-5xl font-mono font-black text-stone-950 tracking-tighter mb-2">
-              #{ticketNo}
+              #{tableNo}
             </h2>
-            <p className="text-[11px] font-mono font-black text-stone-400 uppercase tracking-widest">取票号</p>
+            <p className="text-[11px] font-mono font-black text-stone-400 uppercase tracking-widest">桌号</p>
           </div>
 
           {/* 4. Delivery note and timestamps section */}

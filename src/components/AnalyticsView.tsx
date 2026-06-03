@@ -36,7 +36,7 @@ export default function AnalyticsView({ recipes, onNavigateToLibrary }: Analytic
   return (
     <div className="min-h-screen bg-sage-100 text-sage-900 p-6 flex flex-col pb-44">
       <header className="mb-6">
-        <h1 className="text-3xl font-black tracking-tighter text-sage-900 uppercase">数据大盘</h1>
+        <h1 className="text-6xl font-black tracking-tighter text-sage-900 uppercase">数据大盘</h1>
         <p className="text-sage-500 font-mono text-[10px] mt-2 uppercase tracking-widest leading-none">Kitchen BI & Fulfillment Insights</p>
       </header>
 

@@ -509,7 +509,7 @@ export default function App() {
 
           {view === 'settings' && (
             <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-8 pb-32 bg-sage-100 min-h-full">
-              <h1 className="text-3xl font-black text-sage-900 uppercase tracking-tighter">独厨中心</h1>
+              <h1 className="text-6xl font-black text-sage-900 uppercase tracking-tighter">独厨中心</h1>
               <p className="mt-4 text-sage-500 font-mono text-[10px] uppercase tracking-widest leading-none">SoloChef Operational Center // v1.6</p>
               
               <div className="mt-12 space-y-4">

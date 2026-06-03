@@ -77,7 +77,7 @@ fun LibraryScreen(
             Column {
                 Text(
                     "菜谱库",
-                    fontSize = 28.sp,
+                    fontSize = 40.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = (-0.05).sp,
                     color = Sage900
@@ -364,14 +364,14 @@ private fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
                 modifier = Modifier.weight(1f)
             )
             if (recipe.is_featured) {
-                Surface(
-                    shape = CircleShape,
-                    color = Amber400,
-                    modifier = Modifier.size(20.dp)
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .background(Amber400),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("荐", fontSize = 8.sp, fontWeight = FontWeight.Black, color = Sage900, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-                    }
+                    Text("荐", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center)
                 }
             }
         }

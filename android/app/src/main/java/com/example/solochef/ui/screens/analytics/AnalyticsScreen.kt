@@ -93,7 +93,7 @@ fun AnalyticsScreen(
     val homeRate = (totalHomeMeals.toFloat() / 21f * 100f).coerceAtMost(100f)
 
     Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(24.dp)) {
-        Text("数据大盘", fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
+        Text("数据大盘", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
         Text("Kitchen BI & Fulfillment Insights", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 8.dp))
         Spacer(Modifier.height(24.dp))
 

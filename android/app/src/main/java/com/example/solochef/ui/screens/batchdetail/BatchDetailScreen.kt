@@ -62,13 +62,13 @@ fun BatchDetailScreen(
 
     Column(Modifier.fillMaxSize().background(Sage50)) {
         Surface(modifier = Modifier.fillMaxWidth().background(Sage50.copy(0.8f)).border(1.dp, Sage200), color = Color.Transparent) {
-            Row(Modifier.padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onClose) { Icon(Icons.Default.Close, contentDescription = null, tint = Sage400, modifier = Modifier.size(24.dp)) }
-                Column(Modifier.padding(start = 8.dp)) {
-                    Text("独厨履约 (Kitchen OMS)", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Sage900)
+            Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Close, contentDescription = null, tint = Sage400, modifier = Modifier.size(22.dp)) }
+                Column(Modifier.weight(1f).padding(start = 4.dp)) {
+                    Text("独厨履约 (Kitchen OMS)", fontSize = 17.sp, fontWeight = FontWeight.Black, color = Sage900, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("批次编号: ${batch.id.takeLast(6)}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
                 }
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
                 Surface(modifier = Modifier.clip(RoundedCornerShape(50)), color = Sage900) {
                     Text(if (batch.status == BatchStatus.Picking) "物料筹备" else "待烹饪", Modifier.padding(horizontal = 12.dp, vertical = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White, maxLines = 1)
                 }
@@ -146,36 +146,38 @@ fun BatchDetailScreen(
                         val isDone = recipe.id in batch.completedRecipeIds
                         Surface(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
                             Row {
-                                Box(Modifier.size(120.dp).clip(RoundedCornerShape(24.dp))) {
+                                // Image: w-32 (128dp), aspect-square, shrink-0 (matches Web)
+                                Box(modifier = Modifier.size(128.dp).clip(RoundedCornerShape(24.dp))) {
                                     AsyncImage(recipe.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                                    if (isDone) Box(Modifier.fillMaxSize().background(Color(0xFF10B981).copy(0.2f)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(24.dp)) }
+                                    if (isDone) Box(Modifier.fillMaxSize().background(Color(0xFF10B981).copy(0.2f)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(32.dp)) }
                                 }
-                                Column(Modifier.padding(12.dp).weight(1f)) {
-                                    Text(recipe.name, fontSize = 15.sp, fontWeight = FontWeight.Black, color = Sage900, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        recipe.tags.filter { it in com.example.solochef.ui.screens.library.COOKING_PROCESS_TAGS || it in com.example.solochef.ui.screens.library.CUISINE_TAGS }.take(3).forEach { tag ->
-                                            Surface(shape = RoundedCornerShape(50), color = Sage50, border = BorderStroke(1.dp, Sage100)) {
-                                                Text(tag, Modifier.padding(horizontal = 8.dp, vertical = 2.dp), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Sage400, maxLines = 1)
+                                // flex-1, p-4, justify-between (matches Web)
+                                Column(Modifier.padding(16.dp).weight(1f), verticalArrangement = Arrangement.SpaceBetween) {
+                                    Column {
+                                        Text(recipe.name, fontSize = 18.sp, fontWeight = FontWeight.Black, color = Sage900, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Spacer(Modifier.height(4.dp))
+                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            recipe.tags.filter { it in com.example.solochef.ui.screens.library.COOKING_PROCESS_TAGS || it in com.example.solochef.ui.screens.library.CUISINE_TAGS }.take(2).forEach { tag ->
+                                                Text("#$tag", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Sage400)
                                             }
                                         }
                                     }
-                                    Spacer(Modifier.weight(1f))
                                     if (!isDone) {
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Surface(onClick = { onOpenSOP(recipe) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = Sage800) {
-                                                Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Surface(onClick = { onOpenSOP(recipe) }, modifier = Modifier.weight(1f).height(32.dp), shape = RoundedCornerShape(12.dp), color = Sage800) {
+                                                Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                                                     Text("开始加工", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White)
                                                     Spacer(Modifier.width(4.dp))
                                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
                                                 }
                                             }
-                                            Surface(onClick = { onCompleteRecipe(recipe.id) }, modifier = Modifier.size(48.dp), shape = RoundedCornerShape(12.dp), color = Sage100) {
+                                            Surface(onClick = { onCompleteRecipe(recipe.id) }, modifier = Modifier.width(48.dp).height(32.dp), shape = RoundedCornerShape(12.dp), color = Sage100) {
                                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Sage500, modifier = Modifier.size(18.dp)) }
                                             }
                                         }
                                     } else {
-                                        Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = Color(0xFFECFDF5)) {
-                                            Text("制作完成", Modifier.fillMaxWidth().padding(8.dp), textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFF10B981))
+                                        Surface(modifier = Modifier.fillMaxWidth().height(32.dp), shape = RoundedCornerShape(12.dp), color = Color(0xFFECFDF5)) {
+                                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("制作完成", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFF10B981)) }
                                         }
                                     }
                                 }

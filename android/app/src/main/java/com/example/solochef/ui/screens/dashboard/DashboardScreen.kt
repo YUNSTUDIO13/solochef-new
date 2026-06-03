@@ -87,7 +87,7 @@ fun DashboardScreen(
 
     Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
         Spacer(Modifier.height(24.dp))
-        Text("独厨SoloChef", fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
+        Text("独厨SoloChef", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
         Text("你的精品线上厨房", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 4.dp))
         Spacer(Modifier.height(16.dp))
 
@@ -97,6 +97,9 @@ fun DashboardScreen(
         val batch = activeBatch
         if (batch != null) {
             Surface(modifier = Modifier.fillMaxWidth().height(160.dp), shape = RoundedCornerShape(32.dp), color = Sage900) {
+                Box(Modifier.fillMaxSize()) {
+                    // Decorative background element
+                    Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White.copy(0.03f), modifier = Modifier.size(160.dp).align(Alignment.BottomEnd).offset(x = 40.dp, y = 40.dp).graphicsLayer(rotationZ = -12f))
                 Column(Modifier.padding(20.dp)) {
                     Row(Modifier.fillMaxWidth().clickable { onOpenBatch() }, horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -122,6 +125,7 @@ fun DashboardScreen(
                         }
                     }
                 }
+                } // close Box
             }
         } else {
             Row(Modifier.fillMaxWidth().height(160.dp)) {
@@ -131,13 +135,6 @@ fun DashboardScreen(
                         Spacer(Modifier.height(6.dp))
                         Text("精品厨房空闲中", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900)
                         Text("开启今日美味", fontSize = 8.sp, color = Sage400)
-                        Surface(onClick = { onPlaceOrder() }, modifier = Modifier.padding(top = 8.dp), shape = RoundedCornerShape(50), color = Sage900) {
-                            Row(Modifier.padding(horizontal = 18.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text("去点单", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
-                                Spacer(Modifier.width(6.dp))
-                                Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
-                            }
-                        }
                     }
                 }
                 Spacer(Modifier.width(12.dp))
@@ -157,6 +154,7 @@ fun DashboardScreen(
                             }
                         }
                     } ?: Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Indigo500, Sage900), start = androidx.compose.ui.geometry.Offset(0f, 0f), end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY))), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White.copy(0.06f), modifier = Modifier.size(120.dp).align(Alignment.BottomEnd).offset(x = 30.dp, y = 30.dp).graphicsLayer(rotationZ = -15f))
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color.White.copy(0.8f), modifier = Modifier.size(20.dp))
                             Spacer(Modifier.height(8.dp))
@@ -169,7 +167,7 @@ fun DashboardScreen(
         }
 
         Spacer(Modifier.height(24.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("推荐菜 (Featured)", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
             Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Sage400, modifier = Modifier.size(14.dp))
         }
@@ -219,11 +217,6 @@ private fun Card(recipe: Recipe, onClick: (Recipe) -> Unit, modifier: Modifier) 
     Box(modifier.aspectRatio(1f).clip(RoundedCornerShape(32.dp)).background(Color.White).border(1.dp, Sage200, RoundedCornerShape(32.dp)).clickable { onClick(recipe) }) {
         AsyncImage(recipe.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Black60))))
-        if (recipe.is_featured) {
-            Surface(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp), shape = RoundedCornerShape(6.dp), color = Amber400) {
-                Text("荐", Modifier.padding(horizontal = 8.dp, vertical = 2.dp), fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900)
-            }
-        }
         Text(recipe.name, Modifier.align(Alignment.BottomStart).padding(12.dp), fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
     }
 }

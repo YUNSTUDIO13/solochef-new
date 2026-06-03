@@ -225,81 +225,48 @@ private fun RecipeCard(
         border = BorderStroke(1.dp, Sage200),
         shadowElevation = 1.dp
     ) {
-        Row(Modifier.padding(8.dp).padding(end = 12.dp)) {
-            // Thumbnail — 80dp square
-            Box(Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))) {
+        Row(Modifier.padding(8.dp).padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Thumbnail — 80dp (matches Web w-20 h-20)
+            Box(modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))) {
                 AsyncImage(recipe.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             }
-
             Spacer(Modifier.width(12.dp))
-
-            Column(Modifier.weight(1f).padding(vertical = 2.dp)) {
-                // Name
-                Text(recipe.name, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900, maxLines = 1, overflow = TextOverflow.Ellipsis)
-
-                // Energy dot + label
-                Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier.size(6.dp).background(
-                            when (recipe.energy_level) {
-                                EnergyLevel.High -> Red500; EnergyLevel.Mid -> Amber400; else -> Color(0xFF34D399)
-                            }, CircleShape
-                        )
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(recipe.energy_level.name, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Sage400)
+            // flex-1 column, justify-between, py-0.5 (matches Web)
+            Column(Modifier.weight(1f).padding(vertical = 2.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                // top: name + energy
+                Column {
+                    Text(recipe.name, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(6.dp).background(
+                            when (recipe.energy_level) { EnergyLevel.High -> Red500; EnergyLevel.Mid -> Amber400; else -> Color(0xFF34D399) }, CircleShape
+                        ))
+                        Spacer(Modifier.width(4.dp))
+                        Text(recipe.energy_level.name.uppercase(), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Sage400, letterSpacing = 1.sp)
+                    }
                 }
-
-                Spacer(Modifier.weight(1f))
-
-                // Bottom row: time + cart controls
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                // bottom: time (left) + cart (right)
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("~25 min", fontSize = 8.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
-
+                    Spacer(Modifier.weight(1f))
                     if (count > 0) {
-                        // Selected state: pill counter
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = Sage50,
-                            border = BorderStroke(1.dp, Sage100)
-                        ) {
-                            Row(Modifier.padding(horizontal = 2.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Surface(
-                                    onClick = { viewModel.removeFromCart(recipe.id) },
-                                    modifier = Modifier.size(28.dp),
-                                    shape = CircleShape,
-                                    color = Color.White,
-                                    border = BorderStroke(1.dp, Sage200)
-                                ) {
-                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Default.Remove, contentDescription = null, tint = Sage800, modifier = Modifier.size(14.dp))
-                                    }
+                        Surface(modifier = Modifier.height(32.dp), shape = RoundedCornerShape(50), color = Sage50, border = BorderStroke(1.dp, Sage100)) {
+                            Row(Modifier.height(32.dp).padding(horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Surface(onClick = { viewModel.removeFromCart(recipe.id) }, modifier = Modifier.size(28.dp), shape = CircleShape, color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Remove, contentDescription = null, tint = Sage800, modifier = Modifier.size(14.dp)) }
                                 }
-                                Text("$count", Modifier.padding(horizontal = 8.dp), fontSize = 12.sp, fontWeight = FontWeight.Black, color = Sage900)
-                                Surface(
-                                    onClick = { viewModel.addToCart(recipe.id) },
-                                    modifier = Modifier.size(28.dp),
-                                    shape = CircleShape,
-                                    color = Sage900
-                                ) {
-                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                    }
+                                Text("$count", Modifier.width(16.dp), fontSize = 12.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center)
+                                Surface(onClick = { viewModel.addToCart(recipe.id) }, modifier = Modifier.size(28.dp), shape = CircleShape, color = Sage900) {
+                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp)) }
                                 }
                             }
                         }
                     } else {
-                        // Unselected: "选购" button
-                        Surface(
-                            onClick = { viewModel.addToCart(recipe.id) },
-                            shape = RoundedCornerShape(12.dp),
-                            color = Sage900,
-                            shadowElevation = 2.dp
-                        ) {
-                            Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Surface(onClick = { viewModel.addToCart(recipe.id) }, modifier = Modifier.height(32.dp), shape = RoundedCornerShape(12.dp), color = Sage900, shadowElevation = 2.dp) {
+                            Row(Modifier.height(32.dp).padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("选购", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White)
+                                Text("拿下", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White)
                             }
                         }
                     }

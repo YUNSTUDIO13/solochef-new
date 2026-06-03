@@ -75,10 +75,10 @@ fun FeedbackScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     val receiptGraphicsLayer = rememberGraphicsLayer()
-    val ticketNo = remember {
+    val tableNo = remember {
         val prefs = context.getSharedPreferences("solochef_feedback", android.content.Context.MODE_PRIVATE)
-        val next = prefs.getInt("ticket_counter", 0) + 1
-        prefs.edit().putInt("ticket_counter", next).apply()
+        val next = prefs.getInt("table_counter", 0) + 1
+        prefs.edit().putInt("table_counter", next).apply()
         "%04d".format(next)
     }
     val dateTime = remember {
@@ -122,9 +122,9 @@ fun FeedbackScreen(
                     HorizontalDivider(color = Color(0xFFD6D3D1))
                     Spacer(Modifier.height(20.dp))
 
-                    // Ticket
-                    Text("#$ticketNo", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Color(0xFF0C0A09))
-                    Text("取票号", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color(0xFFA8A29E))
+                    // Table
+                    Text("#$tableNo", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Color(0xFF0C0A09))
+                    Text("桌号", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color(0xFFA8A29E))
                     Spacer(Modifier.height(20.dp))
                     HorizontalDivider(color = Color(0xFFD6D3D1))
                     Spacer(Modifier.height(16.dp))
@@ -209,7 +209,7 @@ fun FeedbackScreen(
                                 }
                                 withContext(Dispatchers.IO) {
                                     val values = ContentValues().apply {
-                                        put(MediaStore.Images.Media.DISPLAY_NAME, "SoloChef_$ticketNo.png")
+                                        put(MediaStore.Images.Media.DISPLAY_NAME, "SoloChef_$tableNo.png")
                                         put(MediaStore.Images.Media.MIME_TYPE, "image/png")
                                         put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/SoloChef")
                                     }
