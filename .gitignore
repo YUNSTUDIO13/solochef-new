@@ -27,3 +27,4 @@ android/.idea/
 
 # OS
 Thumbs.db
+.build-toolchain/

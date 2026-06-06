@@ -67,14 +67,12 @@ fun LibraryScreen(
             
     ) {
         // Header
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 24.dp, bottom = 32.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom
+                .padding(top = 24.dp, bottom = 24.dp)
         ) {
-            Column {
+            Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     "菜谱库",
                     fontSize = 40.sp,
@@ -83,14 +81,21 @@ fun LibraryScreen(
                     color = Sage900
                 )
                 Text(
-                    "TOTAL_RECORDS: ${filtered.size}",
-                    fontSize = 10.sp,
+                    "(${recipes.size})",
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp,
-                    color = Sage500,
-                    modifier = Modifier.padding(top = 2.dp)
+                    color = Sage400,
+                    modifier = Modifier.padding(start = 6.dp, bottom = 4.dp)
                 )
             }
+            Text(
+                "好好吃饭，就是修行",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+                color = Sage500,
+                modifier = Modifier.padding(top = 4.dp)
+            )
         }
 
         // Search & Filter
@@ -148,10 +153,18 @@ fun LibraryScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(24.dp)
             ) {
+                // Tag counts for dynamic filter display
+                val tagCounts = remember(recipes) {
+                    val map = mutableMapOf<String, Int>()
+                    recipes.forEach { r -> r.tags.forEach { tag -> map[tag] = (map[tag] ?: 0) + 1 } }
+                    map
+                }
+
                 // Process Tags
                 FilterSection(
                     title = "烹饪工艺",
                     tags = COOKING_PROCESS_TAGS,
+                    tagCounts = tagCounts,
                     selected = selectedTags,
                     onToggle = { viewModel.toggleTag(it) },
                     onClearAll = { viewModel.clearProcessTags(COOKING_PROCESS_TAGS) }
@@ -162,6 +175,7 @@ fun LibraryScreen(
                 FilterSection(
                     title = "菜系维度",
                     tags = CUISINE_TAGS,
+                    tagCounts = tagCounts,
                     selected = selectedTags,
                     onToggle = { viewModel.toggleTag(it) },
                     onClearAll = { viewModel.clearCuisineTags(CUISINE_TAGS) }
@@ -227,6 +241,7 @@ fun LibraryScreen(
                 columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(filtered, key = { it.id }) { recipe ->
@@ -242,6 +257,7 @@ fun LibraryScreen(
 private fun FilterSection(
     title: String,
     tags: List<String>,
+    tagCounts: Map<String, Int>,
     selected: Set<String>,
     onToggle: (String) -> Unit,
     onClearAll: () -> Unit
@@ -267,15 +283,17 @@ private fun FilterSection(
             selectedColor = Sage800,
             unselectedColor = Sage500
         )
-        // Wrap remaining tags
         tags.forEach { tag ->
-            FilterChip(
-                label = tag,
-                selected = tag in selected,
-                onClick = { onToggle(tag) },
-                selectedColor = Sage800,
-                unselectedColor = Sage500
-            )
+            val cnt = tagCounts[tag] ?: 0
+            if (cnt > 0) {
+                FilterChip(
+                    label = "$tag ($cnt)",
+                    selected = tag in selected,
+                    onClick = { onToggle(tag) },
+                    selectedColor = Sage800,
+                    unselectedColor = Sage500
+                )
+            }
         }
     }
 }
@@ -316,7 +334,6 @@ private fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
                 .aspectRatio(1f)
                 .clip(RoundedCornerShape(28.dp))
                 .background(Color.White)
-                .border(1.dp, Sage200, RoundedCornerShape(28.dp))
         ) {
             AsyncImage(
                 model = recipe.cover_image,
@@ -324,29 +341,38 @@ private fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            // Energy badge
-            Surface(
+            // Cooking time: sum of ALL step durations
+            val cookTime = recipe.timeline.sumOf { it.duration } / 60
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(8.dp),
-                color = Black40,
-                shape = RoundedCornerShape(8.dp)
+                    .padding(8.dp)
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color.White.copy(alpha = 0.22f))
+                    .border(0.5.dp, Color.White.copy(alpha = 0.45f), RoundedCornerShape(6.dp)),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    when (recipe.energy_level) {
-                        EnergyLevel.High -> "15m"
-                        EnergyLevel.Mid -> "10m"
-                        EnergyLevel.Low -> "5m"
-                    },
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    fontSize = 8.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color.White
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "${cookTime}",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White,
+                        lineHeight = 15.sp
+                    )
+                    Text(
+                        "min",
+                        fontSize = 7.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White.copy(alpha = 0.75f),
+                        lineHeight = 9.sp
+                    )
+                }
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(4.dp))
 
         // Title & Featured badge
         Row(
@@ -376,7 +402,7 @@ private fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
             }
         }
 
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(1.dp))
 
         // Tags
         Row(
@@ -399,7 +425,7 @@ private fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(1.dp))
 
         // Steps & Difficulty
         Row(

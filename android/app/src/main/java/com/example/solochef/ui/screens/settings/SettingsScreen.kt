@@ -87,7 +87,7 @@ fun SettingsScreen(
 
         // Header
         Text("独厨中心", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
-        Text("SoloChef Operational Center // v1.6", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 8.dp))
+        Text("饿的时候打开，会有好事发生", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 8.dp))
 
         Spacer(Modifier.height(24.dp))
 
@@ -141,24 +141,6 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(16.dp))
-
-        // ─── Bulk Export All Recipes Button ───────────
-        Surface(
-            onClick = {
-                scope.launch { viewModel.bulkExport(context) }
-            },
-            enabled = !isExporting,
-            shape = RoundedCornerShape(24.dp),
-            color = Color.White,
-            border = BorderStroke(1.dp, Sage200),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Save, contentDescription = null, tint = Sage400, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(12.dp))
-                Text("批量导出所有菜谱 (Markdown)", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Sage900)
-            }
-        }
     }
 }
 
@@ -185,13 +167,63 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                     _importResult.value = "暂无菜谱可导出"
                     return@launch
                 }
-                // Export first recipe via new zip pipeline (single recipe export)
-                val recipe = recipes.first()
                 val out = context.contentResolver.openOutputStream(uri)
                 if (out == null) { _importResult.value = "无法写入目标位置"; return@launch }
-                val ok = ImageUtils.exportRecipeToZip(context, recipe, out)
+                // Export ALL recipes into one zip with subfolder per recipe
+                var count = 0
+                kotlinx.coroutines.withContext(Dispatchers.IO) {
+                    val exportJson = kotlinx.serialization.json.Json { prettyPrint = true; encodeDefaults = true }
+                    java.util.zip.ZipOutputStream(out).use { zos ->
+                        recipes.forEach { recipe ->
+                            val safeName = recipe.name.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                            val prefix = "recipe_${"%02d".format(count + 1)}_$safeName/"
+                            // Default: keep original paths; rewrite only for files actually included
+                            var coverRel = recipe.cover_image
+                            var bomRel = recipe.bom_snapshot
+                            val timelineRel = recipe.timeline.toMutableList()
+                            // Cover image
+                            val coverFile = java.io.File(recipe.cover_image)
+                            if (coverFile.exists()) {
+                                zos.putNextEntry(java.util.zip.ZipEntry("${prefix}images/cover.jpg"))
+                                zos.write(coverFile.readBytes()); zos.closeEntry()
+                                coverRel = "./images/cover.jpg"
+                            }
+                            // BOM snapshot
+                            recipe.bom_snapshot?.let { bom ->
+                                val bf = java.io.File(bom)
+                                if (bf.exists()) {
+                                    zos.putNextEntry(java.util.zip.ZipEntry("${prefix}images/bom.jpg"))
+                                    zos.write(bf.readBytes()); zos.closeEntry()
+                                    bomRel = "./images/bom.jpg"
+                                }
+                            }
+                            // Step images
+                            for (si in recipe.timeline.indices) {
+                                val step = recipe.timeline[si]
+                                val newImgs = step.images?.toMutableList() ?: mutableListOf()
+                                var changed = false
+                                step.images?.forEachIndexed { ii, imgPath ->
+                                    val imgFile = java.io.File(imgPath)
+                                    if (imgFile.exists()) {
+                                        zos.putNextEntry(java.util.zip.ZipEntry("${prefix}images/step_${si}_${ii}.jpg"))
+                                        zos.write(imgFile.readBytes()); zos.closeEntry()
+                                        newImgs[ii] = "./images/step_${si}_${ii}.jpg"
+                                        changed = true
+                                    }
+                                }
+                                if (changed) timelineRel[si] = step.copy(images = newImgs)
+                            }
+                            // Recipe JSON with relative paths
+                            val exported = recipe.copy(cover_image = coverRel, bom_snapshot = bomRel, timeline = timelineRel)
+                            zos.putNextEntry(java.util.zip.ZipEntry("${prefix}recipe.json"))
+                            zos.write(exportJson.encodeToString(Recipe.serializer(), exported).toByteArray(Charsets.UTF_8))
+                            zos.closeEntry()
+                            count++
+                        }
+                    }
+                }
                 out.close()
-                if (ok) _importResult.value = "导出成功：${recipe.name}"
+                if (count > 0) _importResult.value = "导出成功：${count} 份菜谱"
                 else _importResult.value = "导出失败"
             } catch (e: Exception) {
                 _importResult.value = "导出失败：${e.message}"
@@ -205,11 +237,53 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
             try {
                 val `in` = context.contentResolver.openInputStream(uri)
                 if (`in` == null) { _importResult.value = "无法读取文件"; return@launch }
-                val imported = ImageUtils.importRecipeFromZip(context, `in`)
+                // Try single recipe first (legacy format), then multi-recipe (subfolder format)
+                var count = 0
+                kotlinx.coroutines.withContext(Dispatchers.IO) {
+                    val buf = ByteArray(8192)
+                    val importDir = java.io.File(context.filesDir, "imported").also { it.mkdirs() }
+                    // Collect all recipe.json entries grouped by subfolder prefix
+                    val recipeEntries = mutableMapOf<String, String>() // prefix -> json content
+                    val imageEntries = mutableMapOf<String, MutableMap<String, String>>() // prefix -> (relPath -> localPath)
+                    
+                    java.util.zip.ZipInputStream(`in`).use { zis ->
+                        var e = zis.nextEntry
+                        while (e != null) {
+                            val name = e.name
+                            if (name == "recipe.json") {
+                                recipeEntries[""] = zis.bufferedReader().readText()
+                            } else if (name.endsWith("/recipe.json")) {
+                                val prefix = name.removeSuffix("recipe.json")
+                                recipeEntries[prefix] = zis.bufferedReader().readText()
+                            } else if (name.contains("/images/")) {
+                                val prefix = name.substringBefore("/images/") + "/"
+                                val relPath = "./" + name.substringAfter("$prefix")
+                                val t = java.io.File(importDir, "import_${System.currentTimeMillis()}_${name.substringAfterLast("/")}")
+                                t.outputStream().use { o -> var l: Int; while (zis.read(buf).also { l = it } > 0) o.write(buf, 0, l) }
+                                imageEntries.getOrPut(prefix) { mutableMapOf() }[relPath] = t.absolutePath
+                            }
+                            zis.closeEntry(); e = zis.nextEntry
+                        }
+                    }
+                    
+                    recipeEntries.forEach { (prefix, json) ->
+                        val recipe = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; isLenient = true }
+                            .decodeFromString<Recipe>(json)
+                        val pathMap = imageEntries[prefix] ?: emptyMap()
+                        val imported = recipe.copy(
+                            id = System.currentTimeMillis().toString() + "_" + count,
+                            cover_image = pathMap[recipe.cover_image] ?: recipe.cover_image,
+                            bom_snapshot = recipe.bom_snapshot?.let { pathMap[it] ?: it },
+                            timeline = recipe.timeline.map { s -> s.copy(images = s.images?.map { pathMap[it] ?: it } ?: s.images) },
+                            updated_at = System.currentTimeMillis().toString()
+                        )
+                        storage.saveRecipe(imported)
+                        count++
+                    }
+                }
                 `in`.close()
-                if (imported == null) { _importResult.value = "导入失败：无效的 Zip 文件"; return@launch }
-                storage.saveRecipe(imported)
-                _importResult.value = "导入成功：${imported.name}"
+                if (count > 0) _importResult.value = "导入成功：${count} 份菜谱"
+                else _importResult.value = "导入失败：无效的 Zip 文件"
             } catch (e: Exception) {
                 _importResult.value = "导入失败：${e.message}"
             } finally { _isImporting.value = false }

@@ -65,7 +65,7 @@ fun BatchDetailScreen(
             Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Close, contentDescription = null, tint = Sage400, modifier = Modifier.size(22.dp)) }
                 Column(Modifier.weight(1f).padding(start = 4.dp)) {
-                    Text("独厨履约 (Kitchen OMS)", fontSize = 17.sp, fontWeight = FontWeight.Black, color = Sage900, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("独厨履约", fontSize = 17.sp, fontWeight = FontWeight.Black, color = Sage900, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("批次编号: ${batch.id.takeLast(6)}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
                 }
                 Spacer(Modifier.width(8.dp))
@@ -120,7 +120,7 @@ fun BatchDetailScreen(
                                         }
                                     }
                                     Spacer(Modifier.width(16.dp))
-                                    Text(m.item, Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (checked) Sage400 else Sage900, textDecoration = if (checked) androidx.compose.ui.text.style.TextDecoration.LineThrough else null)
+                                    Text(m.item, Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (checked) Sage400 else Sage900, textDecoration = if (checked) androidx.compose.ui.text.style.TextDecoration.LineThrough else null, maxLines = 2, overflow = TextOverflow.Ellipsis)
                                     Text(m.amount, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900)
                                     Text(m.unit, fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage400, modifier = Modifier.padding(start = 2.dp))
                                 }
@@ -147,7 +147,7 @@ fun BatchDetailScreen(
                         Surface(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
                             Row {
                                 // Image: w-32 (128dp), aspect-square, shrink-0 (matches Web)
-                                Box(modifier = Modifier.size(128.dp).clip(RoundedCornerShape(24.dp))) {
+                                Box(modifier = Modifier.size(128.dp).clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))) {
                                     AsyncImage(recipe.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                     if (isDone) Box(Modifier.fillMaxSize().background(Color(0xFF10B981).copy(0.2f)), contentAlignment = Alignment.Center) { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(32.dp)) }
                                 }

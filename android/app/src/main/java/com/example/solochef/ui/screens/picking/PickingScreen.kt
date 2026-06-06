@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -105,7 +106,7 @@ fun PickingScreen(
                                             if (isChecked) Icon(Icons.Default.Check, contentDescription = null, tint = Sage800, modifier = Modifier.size(12.dp))
                                         }
                                         Spacer(Modifier.width(8.dp))
-                                        Text(m.item, fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (isChecked) Color.White else Sage900)
+                                        Text(m.item, Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (isChecked) Color.White else Sage900, maxLines = 2, overflow = TextOverflow.Ellipsis)
                                         Text(m.amount, fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (isChecked) Color.White else Sage900)
                                         Text(m.unit, fontSize = 9.sp, color = if (isChecked) Color.White.copy(0.6f) else Sage300, modifier = Modifier.padding(start = 1.dp))
                                     }

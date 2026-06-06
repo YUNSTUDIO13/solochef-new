@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -111,7 +112,7 @@ fun RecipeDetailScreen(
                                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Surface(modifier = Modifier.size(28.dp), shape = RoundedCornerShape(10.dp), color = Sage50) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("\uD83E\uDD63", fontSize = 14.sp) } }
                                         Spacer(Modifier.width(8.dp))
-                                        Text(m.item, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Sage900)
+                                        Text(m.item, Modifier.weight(1f), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Sage900, maxLines = 2, overflow = TextOverflow.Ellipsis)
                                         Text(m.amount, fontSize = 11.sp, fontWeight = FontWeight.Black, color = Sage900)
                                         Text(m.unit, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Sage300, modifier = Modifier.padding(start = 2.dp))
                                     }
@@ -132,25 +133,24 @@ fun RecipeDetailScreen(
 
                 recipe.timeline.forEachIndexed { idx, step ->
                     Row(Modifier.padding(bottom = 32.dp)) {
-                        Surface(modifier = Modifier.size(32.dp), shape = CircleShape, color = Color.White, border = BorderStroke(2.dp, Sage100)) {
+                        Surface(modifier = Modifier.size(32.dp).align(Alignment.Top), shape = CircleShape, color = Color.White, border = BorderStroke(2.dp, Sage100)) {
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("${idx + 1}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900) }
                         }
                         Spacer(Modifier.width(20.dp))
-                        Column(Modifier.weight(1f)) {
+                        Column {
                             Text(step.content, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900)
                             Text("${step.duration / 60} MINS", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Sage300, modifier = Modifier.padding(top = 4.dp))
                             // Sub-tasks
                             if (step.sub_tasks.isNotEmpty()) {
-                                Spacer(Modifier.height(12.dp))
                                 Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = Sage50) {
-                                    Column(Modifier.padding(12.dp)) {
-                                        Text("并行子任务 / Parallel Tasks", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400, modifier = Modifier.padding(bottom = 8.dp))
+                                    Column(Modifier.padding(8.dp)) {
+                                        Text("并行子任务 / Parallel Tasks", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
                                         step.sub_tasks.forEach { sub ->
-                                            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                                                     Surface(modifier = Modifier.size(16.dp), shape = RoundedCornerShape(4.dp), color = Sage900) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp)) } }
                                                     Spacer(Modifier.width(8.dp))
-                                                    Text(sub.content, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Sage800)
+                                                    Text(sub.content, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Sage800, maxLines = 4, overflow = TextOverflow.Ellipsis)
                                                 }
                                                 Text("${sub.duration / 60} MIN", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Sage400)
                                             }
@@ -187,7 +187,7 @@ fun RecipeDetailScreen(
         }
 
         // Delete dialog
-        AnimatedVisibility(showDeleteConfirm) {
+        AnimatedVisibility(showDeleteConfirm, enter = fadeIn(), exit = fadeOut()) {
             Box(Modifier.fillMaxSize().background(Black60).clickable { showDeleteConfirm = false }) {
                 Surface(modifier = Modifier.align(Alignment.Center).padding(24.dp), shape = RoundedCornerShape(40.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
                     Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {

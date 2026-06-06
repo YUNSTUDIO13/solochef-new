@@ -75,7 +75,19 @@ fun OrderEngineScreen(
         }
     }
 
-    val categories = listOf("all", "主推菜") + COOKING_PROCESS_TAGS + CUISINE_TAGS
+    // Dynamic categories: only show tags that exist in recipes, with counts
+    data class OrderCategory(val key: String, val label: String, val count: Int)
+    val categories = remember(recipes) {
+        val list = mutableListOf<OrderCategory>()
+        list.add(OrderCategory("all", "全部", recipes.size))
+        val featuredCount = recipes.count { it.is_featured }
+        if (featuredCount > 0) list.add(OrderCategory("主推菜", "主推菜", featuredCount))
+        (COOKING_PROCESS_TAGS + CUISINE_TAGS).forEach { tag ->
+            val cnt = recipes.count { tag in it.tags }
+            if (cnt > 0) list.add(OrderCategory(tag, tag, cnt))
+        }
+        list
+    }
 
     val filtered = remember(recipes, activeCategory) {
         recipes.filter { r ->
@@ -120,20 +132,30 @@ fun OrderEngineScreen(
                 Modifier.width(80.dp).fillMaxHeight().background(Sage50).verticalScroll(rememberScrollState())
             ) {
                 categories.forEach { cat ->
-                    val sel = cat == activeCategory
+                    val sel = cat.key == activeCategory
                     Box(
                         Modifier.fillMaxWidth()
                             .then(if (sel) Modifier.background(Color.White) else Modifier)
-                            .clickable { viewModel.setCategory(cat) }
+                            .clickable { viewModel.setCategory(cat.key) }
                     ) {
                         if (sel) Box(Modifier.width(4.dp).fillMaxHeight().background(Sage900).align(Alignment.CenterStart))
-                        Text(
-                            if (cat == "all") "全部" else cat,
-                            Modifier.fillMaxWidth().padding(vertical = 20.dp),
-                            fontSize = 9.sp, fontWeight = FontWeight.Black,
-                            color = if (sel) Sage900 else Sage400,
-                            textAlign = TextAlign.Center
-                        )
+                        Column(
+                            Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                cat.label,
+                                fontSize = 9.sp, fontWeight = FontWeight.Black,
+                                color = if (sel) Sage900 else Sage400,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                "(${cat.count})",
+                                fontSize = 7.sp, fontWeight = FontWeight.Bold,
+                                color = if (sel) Sage500 else Sage300,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
@@ -170,7 +192,8 @@ fun OrderEngineScreen(
                 Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text("待采订单 (Selected)", fontSize = 9.sp, fontWeight = FontWeight.Black, color = White40, letterSpacing = 2.sp)
-                        Text("${cart.size} 份菜品", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        val totalCost = cart.groupBy { it }.map { (id, ids) -> (recipes.find { it.id == id }?.cost ?: 0.0) * ids.size }.sum()
+                        Text("¥${"%.0f".format(totalCost)}", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
                     }
                     Spacer(Modifier.weight(1f))
                     Surface(onClick = { onGeneratePlan() }, shape = RoundedCornerShape(50), color = Color.White) {
@@ -222,32 +245,35 @@ private fun RecipeCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
         color = Color.White,
-        border = BorderStroke(1.dp, Sage200),
-        shadowElevation = 1.dp
+        border = BorderStroke(1.dp, Sage200)
     ) {
-        Row(Modifier.padding(8.dp).padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(8.dp).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             // Thumbnail — 80dp (matches Web w-20 h-20)
             Box(modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))) {
                 AsyncImage(recipe.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             }
-            Spacer(Modifier.width(12.dp))
-            // flex-1 column, justify-between, py-0.5 (matches Web)
-            Column(Modifier.weight(1f).padding(vertical = 2.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                // top: name + energy
-                Column {
-                    Text(recipe.name, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(6.dp).background(
-                            when (recipe.energy_level) { EnergyLevel.High -> Red500; EnergyLevel.Mid -> Amber400; else -> Color(0xFF34D399) }, CircleShape
-                        ))
-                        Spacer(Modifier.width(4.dp))
-                        Text(recipe.energy_level.name.uppercase(), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Sage400, letterSpacing = 1.sp)
-                    }
-                }
-                // bottom: time (left) + cart (right)
+            Spacer(Modifier.width(10.dp))
+            // flex-1 column, compact 3-row, centered with image
+            Column(Modifier.weight(1f).padding(vertical = 4.dp)) {
+                // row 1: name
+                Text(recipe.name, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // row 2: energy + time
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("~25 min", fontSize = 8.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
+                    Box(Modifier.size(6.dp).background(
+                        when (recipe.energy_level) { EnergyLevel.High -> Red500; EnergyLevel.Mid -> Amber400; else -> Color(0xFF34D399) }, CircleShape
+                    ))
+                    Spacer(Modifier.width(4.dp))
+                    Text(recipe.energy_level.name.uppercase(), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Sage400, letterSpacing = 1.sp)
+                    Spacer(Modifier.weight(1f))
+                    val cookTime = recipe.timeline.sumOf { it.duration } / 60
+                    Text("~${cookTime} min", fontSize = 8.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
+                }
+                Spacer(Modifier.height(4.dp))
+                // row 3: cost (left) + cart button (right) — aligned on same row
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (recipe.cost > 0.0) {
+                        Text("¥${"%.0f".format(recipe.cost)}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Red500)
+                    }
                     Spacer(Modifier.weight(1f))
                     if (count > 0) {
                         Surface(modifier = Modifier.height(32.dp), shape = RoundedCornerShape(50), color = Sage50, border = BorderStroke(1.dp, Sage100)) {
@@ -255,7 +281,7 @@ private fun RecipeCard(
                                 Surface(onClick = { viewModel.removeFromCart(recipe.id) }, modifier = Modifier.size(28.dp), shape = CircleShape, color = Color.White, border = BorderStroke(1.dp, Sage200)) {
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Remove, contentDescription = null, tint = Sage800, modifier = Modifier.size(14.dp)) }
                                 }
-                                Text("$count", Modifier.width(16.dp), fontSize = 12.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center)
+                                Text("$count", Modifier.width(22.dp), fontSize = 12.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center)
                                 Surface(onClick = { viewModel.addToCart(recipe.id) }, modifier = Modifier.size(28.dp), shape = CircleShape, color = Sage900) {
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp)) }
                                 }

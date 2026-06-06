@@ -53,6 +53,7 @@ data class Recipe(
     val cost: Double = 0.0,
     val price: Double = 0.0,
     val last_cooked_at: String? = null,
+    val cooked_count: Int = 0,              // 锅气值：累计完成烹饪次数
     val materials: Map<String, List<Material>> = mapOf(
         "meat" to emptyList(),
         "vegetable" to emptyList(),
@@ -82,6 +83,17 @@ data class UserStats(
         return copy(streak = newStreak, last_ignition = now.toString())
     }
 }
+
+@Serializable
+data class CookingRecord(
+    val id: String = System.currentTimeMillis().toString(),
+    val recipeId: String = "",
+    val recipeName: String = "",
+    val coverImage: String = "",
+    val cookedAt: Long = System.currentTimeMillis(),
+    val tags: List<String> = emptyList(),
+    val durationMins: Int = 0
+)
 
 @Serializable
 data class CookingHistoryEntry(

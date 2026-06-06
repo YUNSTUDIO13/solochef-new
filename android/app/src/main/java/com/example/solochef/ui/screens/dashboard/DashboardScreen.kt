@@ -79,13 +79,14 @@ fun DashboardScreen(
     }
     val featured = remember(recipes, selProcess) {
         recipes.filter { r ->
-            if (selProcess == "全部") true  // show all recipes, not just cooking-process-tagged
+            if (!r.is_featured) return@filter false
+            if (selProcess == "全部") true
             else r.tags.contains(selProcess)
         }
-            .sortedWith(compareByDescending<Recipe> { it.is_featured }.thenBy { it.name })
+        .sortedByDescending { it.cooked_count }
     }
 
-    Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
+    Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 80.dp)) {
         Spacer(Modifier.height(24.dp))
         Text("独厨SoloChef", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
         Text("你的精品线上厨房", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 4.dp))
@@ -171,12 +172,12 @@ fun DashboardScreen(
             Text("推荐菜 (Featured)", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
             Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Sage400, modifier = Modifier.size(14.dp))
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(6.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(dynProcesses) { tag ->
                 val sel = tag == selProcess
                 Surface(onClick = { vm.select(tag) }, modifier = Modifier, shape = RoundedCornerShape(50), color = if (sel) Sage900 else Color.White, border = BorderStroke(1.dp, if (sel) Sage900 else Sage200)) {
-                    Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { Text(tag, fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (sel) Color.White else Sage400) }
+                    Box(Modifier.padding(horizontal = 16.dp, vertical = 1.dp)) { Text(tag, fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (sel) Color.White else Sage400) }
                 }
             }
         }
@@ -187,11 +188,10 @@ fun DashboardScreen(
                 Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { Text("暂无推荐菜谱", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage300) }
             }
         } else {
-            val g = featured.take(4)
-            for (i in g.indices step 2) {
+            for (i in featured.indices step 2) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Card(recipe = g[i], onClick = onSelectRecipe, modifier = Modifier.weight(1f))
-                    if (i + 1 < g.size) Card(recipe = g[i + 1], onClick = onSelectRecipe, modifier = Modifier.weight(1f))
+                    Card(recipe = featured[i], onClick = onSelectRecipe, modifier = Modifier.weight(1f))
+                    if (i + 1 < featured.size) Card(recipe = featured[i + 1], onClick = onSelectRecipe, modifier = Modifier.weight(1f))
                     else Spacer(Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(16.dp))
@@ -214,7 +214,7 @@ private fun Modifier.dashedBorder(strokeWidth: Float = 2f, dashWidth: Float = 10
 
 @Composable
 private fun Card(recipe: Recipe, onClick: (Recipe) -> Unit, modifier: Modifier) {
-    Box(modifier.aspectRatio(1f).clip(RoundedCornerShape(32.dp)).background(Color.White).border(1.dp, Sage200, RoundedCornerShape(32.dp)).clickable { onClick(recipe) }) {
+    Box(modifier.aspectRatio(1f).clip(RoundedCornerShape(32.dp)).background(Color.White).clickable { onClick(recipe) }) {
         AsyncImage(recipe.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Black60))))
         Text(recipe.name, Modifier.align(Alignment.BottomStart).padding(12.dp), fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)

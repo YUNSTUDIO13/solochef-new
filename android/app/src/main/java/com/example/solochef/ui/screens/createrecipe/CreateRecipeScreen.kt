@@ -334,11 +334,8 @@ fun CreateRecipeScreen(
                         Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             OutlinedTextField(m.item, { updateMaterial(cat, idx, m.copy(item = it)) }, Modifier.weight(1f), placeholder = { Text("食材", color = Sage300) }, singleLine = true, shape = RoundedCornerShape(0.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent, focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900))
                             Surface(modifier = Modifier.clip(RoundedCornerShape(16.dp)), color = Color.White, border = BorderStroke(1.dp, Sage100)) {
-                                Row(Modifier.padding(horizontal = 6.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    BasicTextField(m.amount, { updateMaterial(cat, idx, m.copy(amount = it)) }, Modifier.width(52.dp).padding(vertical = 4.dp), singleLine = true, textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900, textAlign = TextAlign.Center), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), decorationBox = { innerTextField -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { innerTextField() } })
-                                    Box(Modifier.width(1.dp).height(20.dp).background(Sage100))
-                                    BasicTextField(m.unit, { updateMaterial(cat, idx, m.copy(unit = it)) }, Modifier.width(40.dp).padding(vertical = 4.dp), singleLine = true, textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), decorationBox = { innerTextField -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { innerTextField() } })
-                                }
+                                val combinedAmount = if (m.unit.isNotEmpty()) "${m.amount}${m.unit}" else m.amount
+                                BasicTextField(combinedAmount, { updateMaterial(cat, idx, m.copy(amount = it, unit = "")) }, Modifier.width(92.dp).padding(vertical = 4.dp), singleLine = true, textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900, textAlign = TextAlign.Center), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), decorationBox = { innerTextField -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { innerTextField() } })
                             }
                             IconButton(onClick = { removeMaterial(cat, idx) }, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Delete, null, tint = Color(0xFFF87171), modifier = Modifier.size(18.dp)) }
                         }
@@ -379,16 +376,14 @@ fun CreateRecipeScreen(
                             IconButton(onClick = { removeStep(step.step_id) }) { Icon(Icons.Default.Delete, null, tint = Sage300, modifier = Modifier.size(20.dp)) }
                         }
                         Spacer(Modifier.height(24.dp))
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                            Box(Modifier.weight(1f)) {
-                                OutlinedTextField(step.content, { updateStep(step.step_id, step.copy(content = it)) }, Modifier.fillMaxWidth(), placeholder = { Text("步骤描述...", color = Sage300, fontSize = 14.sp) }, singleLine = false, maxLines = 4, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage100, unfocusedBorderColor = Sage100, focusedContainerColor = Sage50, unfocusedContainerColor = Sage50), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900))
-                            }
-                            Spacer(Modifier.width(16.dp))
-                            OutlinedTextField("${step.duration / 60}", {
-                                val v = it.toIntOrNull()?.coerceAtLeast(1) ?: 1
-                                updateStep(step.step_id, step.copy(duration = v * 60))
-                            }, Modifier.width(72.dp), placeholder = { Text("Min", color = Sage400) }, singleLine = true, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage100, unfocusedBorderColor = Sage100, focusedContainerColor = Sage50, unfocusedContainerColor = Sage50), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center))
+                        Box(Modifier.fillMaxWidth()) {
+                            OutlinedTextField(step.content, { updateStep(step.step_id, step.copy(content = it)) }, Modifier.fillMaxWidth(), placeholder = { Text("步骤描述...", color = Sage300, fontSize = 14.sp) }, singleLine = false, maxLines = 4, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage100, unfocusedBorderColor = Sage100, focusedContainerColor = Sage50, unfocusedContainerColor = Sage50), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900))
                         }
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(if (step.duration > 0) "${step.duration / 60}" else "", {
+                            val v = it.toIntOrNull() ?: 0
+                            updateStep(step.step_id, step.copy(duration = v * 60))
+                        }, Modifier.width(96.dp), placeholder = { Text("Min", color = Sage400) }, singleLine = true, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage100, unfocusedBorderColor = Sage100, focusedContainerColor = Sage50, unfocusedContainerColor = Sage50), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center))
 
                         // Step images (Web: 步骤图解)
                         Spacer(Modifier.height(16.dp))
@@ -428,19 +423,24 @@ fun CreateRecipeScreen(
                             }
                             Spacer(Modifier.height(8.dp))
                             (step.sub_tasks ?: emptyList()).forEachIndexed { subIdx, sub ->
-                                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Sage50).padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.Top) {
-                                    Box(Modifier.weight(1f)) {
-                                        OutlinedTextField(sub.content, { updateSubTask(step.step_id, subIdx, sub.copy(content = it)) }, Modifier.fillMaxWidth(), placeholder = { Text("子任务...", color = Sage300) }, singleLine = false, maxLines = 2, shape = RoundedCornerShape(0.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent, focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Sage900))
-                                    }
-                                    Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        OutlinedTextField("${sub.duration / 60}", { updateSubTask(step.step_id, subIdx, sub.copy(duration = (it.toIntOrNull() ?: 1) * 60)) }, Modifier.width(40.dp), singleLine = true, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage100, unfocusedBorderColor = Sage100, focusedContainerColor = Color.White, unfocusedContainerColor = Color.White), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center))
-                                        Spacer(Modifier.width(4.dp))
+                                Column(Modifier.fillMaxWidth().padding(bottom = 6.dp).clip(RoundedCornerShape(16.dp)).background(Sage50).padding(horizontal = 8.dp, vertical = 4.dp)) {
+                                    OutlinedTextField(sub.content, { updateSubTask(step.step_id, subIdx, sub.copy(content = it)) }, Modifier.fillMaxWidth(), placeholder = { Text("子任务...", color = Sage300) }, singleLine = false, shape = RoundedCornerShape(0.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent, focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Sage900))
+                                    Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        OutlinedTextField(if (sub.duration > 0) "${sub.duration / 60}" else "", { updateSubTask(step.step_id, subIdx, sub.copy(duration = (it.toIntOrNull() ?: 0) * 60)) }, Modifier.width(72.dp), singleLine = true, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage100, unfocusedBorderColor = Sage100, focusedContainerColor = Color.White, unfocusedContainerColor = Color.White), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center))
                                         IconButton(onClick = { removeSubTask(step.step_id, subIdx) }, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Delete, null, tint = Sage300, modifier = Modifier.size(14.dp)) }
                                     }
                                 }
                             }
                         }
                     }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Surface(onClick = { addStep() }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = Sage800) {
+                Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("添加步骤", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White)
                 }
             }
         }

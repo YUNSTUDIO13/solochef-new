@@ -112,6 +112,40 @@ class LocalFileManager(private val context: Context) {
     }
 
     // ═══════════════════════════════════════════════════
+    //  Cooking Records (for calendar / 食光日历)
+    // ═══════════════════════════════════════════════════
+
+    suspend fun saveCookingRecord(record: CookingRecord) = withContext(Dispatchers.IO) {
+        val records = getCookingRecordsInternal().toMutableList()
+        records.add(record)
+        File(dataDir, "_cooking_records.json").writeText(json.encodeToString(records))
+    }
+
+    suspend fun saveCookingRecords(records: List<CookingRecord>) = withContext(Dispatchers.IO) {
+        File(dataDir, "_cooking_records.json").writeText(json.encodeToString(records))
+    }
+
+    suspend fun getCookingRecords(): List<CookingRecord> = withContext(Dispatchers.IO) {
+        getCookingRecordsInternal()
+    }
+
+    /**
+     * Get cooking records within a date range (inclusive start, exclusive end).
+     * startMs and endMs are epoch millis.
+     */
+    suspend fun getCookingRecordsInRange(startMs: Long, endMs: Long): List<CookingRecord> = withContext(Dispatchers.IO) {
+        getCookingRecordsInternal().filter { it.cookedAt in startMs..<endMs }
+    }
+
+    private fun getCookingRecordsInternal(): List<CookingRecord> {
+        val file = File(dataDir, "_cooking_records.json")
+        return if (file.exists()) {
+            try { json.decodeFromString<List<CookingRecord>>(file.readText()) }
+            catch (_: Exception) { emptyList() }
+        } else emptyList()
+    }
+
+    // ═══════════════════════════════════════════════════
     //  Markdown Serialization
     // ═══════════════════════════════════════════════════
 

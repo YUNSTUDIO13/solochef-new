@@ -148,13 +148,11 @@ fun ExecutionScreen(
 
                                 // Sub-tasks
                                 if (isActive && step.sub_tasks.isNotEmpty()) {
-                                    Spacer(Modifier.height(24.dp))
+                                    Spacer(Modifier.height(8.dp))
                                     Divider(color = Sage50)
-                                    Spacer(Modifier.height(24.dp))
                                     Text("后续并行任务", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
-                                    Spacer(Modifier.height(12.dp))
                                     step.sub_tasks.forEach { sub ->
-                                        Surface(Modifier.fillMaxWidth().padding(vertical = 4.dp), RoundedCornerShape(24.dp), Sage50) {
+                                        Surface(Modifier.fillMaxWidth().padding(top = 6.dp), RoundedCornerShape(24.dp), Sage50) {
                                             Row(Modifier.padding(20.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                                 Row {
                                                     Box(Modifier.size(6.dp).background(Sage900, CircleShape))

@@ -18,6 +18,10 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -26,11 +30,43 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalDensity
 import com.example.solochef.model.Recipe
 import com.example.solochef.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private class ReceiptShape(private val teethH: Float, private val teethW: Float) : androidx.compose.ui.graphics.Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        density: androidx.compose.ui.unit.Density
+    ): Outline {
+        val path = Path().apply {
+            moveTo(0f, teethH)
+            var x = 0f
+            var down = true
+            while (x < size.width) {
+                x = minOf(x + teethW, size.width)
+                val y = if (down) 0f else teethH
+                lineTo(x, y)
+                down = !down
+            }
+            lineTo(size.width, size.height - teethH)
+            x = size.width
+            down = true
+            while (x > 0f) {
+                x = maxOf(x - teethW, 0f)
+                val y = if (down) size.height else size.height - teethH
+                lineTo(x, y)
+                down = !down
+            }
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
 
 private val sentences = listOf(
     "关火，出锅。趁热尝第一口，是对主厨最好的犒劳。好好享受这一餐吧！",
@@ -95,13 +131,24 @@ fun FeedbackScreen(
             // Tape decoration
             Box(Modifier.width(112.dp).height(24.dp).background(Color.White.copy(0.4f), RoundedCornerShape(2.dp)).border(1.dp, Color(0xFFE7E5E4).copy(0.2f), RoundedCornerShape(2.dp)))
 
-            // Receipt paper
+            // Receipt paper — jagged cut top & bottom (8dp teeth, 20dp width)
+            val density = LocalDensity.current
+            val receiptShape = remember {
+                ReceiptShape(
+                    teethH = density.run { 8.dp.toPx() },
+                    teethW = density.run { 20.dp.toPx() }
+                )
+            }
             Surface(
-                Modifier.fillMaxWidth().offset(y = yAnim.dp).drawWithContent {
-                    receiptGraphicsLayer.record { this@drawWithContent.drawContent() }
-                    drawContent()
-                },
-                RoundedCornerShape(32.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .offset(y = yAnim.dp)
+                    .clip(receiptShape)
+                    .drawWithContent {
+                        receiptGraphicsLayer.record { this@drawWithContent.drawContent() }
+                        drawContent()
+                    },
+                RoundedCornerShape(0.dp),
                 color = Color(0xFFFAF9F4),
                 border = BorderStroke(1.dp, Color(0xFFD6D3D1).copy(0.4f)),
                 shadowElevation = 4.dp
