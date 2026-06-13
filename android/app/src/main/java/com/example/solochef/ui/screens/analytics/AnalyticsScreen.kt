@@ -38,19 +38,13 @@ fun AnalyticsScreen(
     }
 
     Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(24.dp)) {
-        Text("数据大盘", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
+        Text("食光日历", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
         Text("时间长河里的烟火气", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 8.dp))
         Spacer(Modifier.height(24.dp))
 
         // ─── 食光日历 ───
         Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
             Column(Modifier.padding(20.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = Sage900, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("食光日历", fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
-                }
-                Spacer(Modifier.height(12.dp))
                 FoodCalendar(
                     records = cookingRecords,
                     recipes = recipes,

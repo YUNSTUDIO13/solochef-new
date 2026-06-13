@@ -45,6 +45,7 @@ import kotlinx.coroutines.withContext
 fun SettingsScreen(
     onNavigateToLibrary: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
+    onDataChanged: (() -> Unit)? = null,
     viewModel: SettingsViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -72,6 +73,7 @@ fun SettingsScreen(
     LaunchedEffect(importResult) {
         importResult?.let { msg ->
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            if (msg.startsWith("导入成功")) { onDataChanged?.invoke() }
             viewModel.clearImportResult()
         }
     }
@@ -220,6 +222,15 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                             zos.closeEntry()
                             count++
                         }
+                        // Export cooking records (食光日历数据)
+                        try {
+                            val records = storage.getCookingRecords()
+                            if (records.isNotEmpty()) {
+                                zos.putNextEntry(java.util.zip.ZipEntry("cooking_records.json"))
+                                zos.write(exportJson.encodeToString(kotlinx.serialization.builtins.ListSerializer(com.example.solochef.model.CookingRecord.serializer()), records).toByteArray(Charsets.UTF_8))
+                                zos.closeEntry()
+                            }
+                        } catch (_: Exception) { /* skip if read fails */ }
                     }
                 }
                 out.close()
@@ -245,6 +256,7 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                     // Collect all recipe.json entries grouped by subfolder prefix
                     val recipeEntries = mutableMapOf<String, String>() // prefix -> json content
                     val imageEntries = mutableMapOf<String, MutableMap<String, String>>() // prefix -> (relPath -> localPath)
+                    var cookingRecordsJson: String? = null
                     
                     java.util.zip.ZipInputStream(`in`).use { zis ->
                         var e = zis.nextEntry
@@ -252,6 +264,8 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                             val name = e.name
                             if (name == "recipe.json") {
                                 recipeEntries[""] = zis.bufferedReader().readText()
+                            } else if (name == "cooking_records.json") {
+                                cookingRecordsJson = zis.bufferedReader().readText()
                             } else if (name.endsWith("/recipe.json")) {
                                 val prefix = name.removeSuffix("recipe.json")
                                 recipeEntries[prefix] = zis.bufferedReader().readText()
@@ -266,19 +280,44 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                         }
                     }
                     
+                    val oldToNewId = mutableMapOf<String, String>() // old recipeId → new recipeId
                     recipeEntries.forEach { (prefix, json) ->
                         val recipe = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; isLenient = true }
                             .decodeFromString<Recipe>(json)
                         val pathMap = imageEntries[prefix] ?: emptyMap()
+                        // Old → new ID mapping for cooking records
+                        val oldId = recipe.id
+                        val newId = System.currentTimeMillis().toString() + "_" + count
                         val imported = recipe.copy(
-                            id = System.currentTimeMillis().toString() + "_" + count,
+                            id = newId,
                             cover_image = pathMap[recipe.cover_image] ?: recipe.cover_image,
                             bom_snapshot = recipe.bom_snapshot?.let { pathMap[it] ?: it },
                             timeline = recipe.timeline.map { s -> s.copy(images = s.images?.map { pathMap[it] ?: it } ?: s.images) },
                             updated_at = System.currentTimeMillis().toString()
                         )
                         storage.saveRecipe(imported)
+                        // Map old ID to new ID for cooking record restoration
+                        oldToNewId[oldId] = newId
                         count++
+                    }
+                    // Restore cooking records (食光日历)
+                    if (cookingRecordsJson != null) {
+                        try {
+                            val records = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; isLenient = true }
+                                .decodeFromString<List<com.example.solochef.model.CookingRecord>>(cookingRecordsJson)
+                            // Re-link: map old recipeId → new recipeId + cover_image
+                            val allRecipes = storage.getAllRecipes()
+                            val idToRecipe = allRecipes.associateBy { it.id }
+                            val mapped = records.mapNotNull { r ->
+                                val newRid = oldToNewId[r.recipeId] ?: return@mapNotNull null
+                                val recipe = idToRecipe[newRid] ?: return@mapNotNull null
+                                r.copy(recipeId = newRid, coverImage = recipe.cover_image, recipeName = recipe.name)
+                            }
+                            if (mapped.isNotEmpty()) {
+                                storage.saveCookingRecords(mapped)
+                                _importResult.value = "导入成功：${count} 份菜谱 (+${mapped.size} 条烹饪记录)"
+                            }
+                        } catch (_: Exception) { /* skip if parse fails */ }
                     }
                 }
                 `in`.close()

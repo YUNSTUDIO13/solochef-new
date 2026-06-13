@@ -102,87 +102,66 @@ fun SoloChefApp() {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Sage100,
-        // ─── FAB: floating above bottom nav (centered + thin) ───
-        floatingActionButton = {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                AnimatedVisibility(
-                    visible = showFAB,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(0.9f).padding(bottom = 2.dp),
-                        shape = RoundedCornerShape(50),
-                        color = Sage900.copy(alpha = 0.95f),
-                        shadowElevation = 12.dp
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth().border(1.dp, White20, RoundedCornerShape(50)).padding(horizontal = 4.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                Modifier.weight(1f).clickable { navController.navigate(Screen.OrderEngine.route) }.padding(horizontal = 12.dp, vertical = 0.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(modifier = Modifier.size(28.dp), shape = CircleShape, color = White20) {
-                                    Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.ShoppingCart, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp)) }
-                                }
-                                Column(Modifier.padding(start = 8.dp)) {
-                                    Text("Kitchen OMS", fontSize = 7.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = White40, lineHeight = 9.sp)
-                                    Text("独厨点单", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, lineHeight = 14.sp)
-                                }
-                            }
-                            Box(Modifier.width(1.dp).height(24.dp).background(White10))
-                            Row(
-                                Modifier.clickable { navController.navigate(Screen.CreateRecipe.route) }.padding(horizontal = 16.dp, vertical = 0.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
-                                Text("新建菜谱", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White)
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        // ─── Bottom Navigation (centered + thin + uniform margins) ──
+        // ─── Floating Bottom Tab Bar ───
         bottomBar = {
-            Box(Modifier.fillMaxWidth().padding(bottom = 20.dp), contentAlignment = Alignment.Center) {
-                AnimatedVisibility(
-                    visible = showBottomNav,
+            AnimatedVisibility(
+                visible = showBottomNav,
                 enter = fadeIn() + slideInVertically { it },
                 exit = fadeOut() + slideOutVertically { it }
-                ) {
+            ) {
+                Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.BottomCenter) {
+                    // Only the capsule has background - outside is transparent
                     Surface(
-                        modifier = Modifier.fillMaxWidth(0.9f),
-                        shape = RoundedCornerShape(50),
-                        color = White90,
-                        shadowElevation = 8.dp,
-                        border = BorderStroke(1.dp, White20)
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(percent = 50),
+                        color = Color(0xFF2D4A3A).copy(alpha = 0.95f),
+                        shadowElevation = 20.dp
                     ) {
                         Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.SpaceAround,
+                            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             mainScreens.forEach { s ->
                                 val sel = currentRoute == s.route
-                                Surface(
-                                    onClick = {
-                                        if (sel) return@Surface
-                                        navController.navigate(s.route) {
-                                            popUpTo(Screen.Dashboard.route)
-                                            launchSingleTop = true
-                                        }
-                                        if (s == Screen.Analytics) analyticsKey++
-                                    },
-                                    modifier = Modifier.clip(RoundedCornerShape(50)),
-                                    shape = RoundedCornerShape(50),
-                                    color = if (sel) Sage800 else Color.Transparent
+                                Box(
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Row(Modifier.padding(horizontal = 14.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(s.icon, contentDescription = null, modifier = Modifier.size(14.dp), tint = if (sel) Color.White else Sage800)
-                                        if (sel) { Spacer(Modifier.width(6.dp)); Text(s.label, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White) }
+                                    Surface(
+                                        onClick = {
+                                            if (sel) return@Surface
+                                            navController.navigate(s.route) {
+                                                popUpTo(Screen.Dashboard.route)
+                                                launchSingleTop = true
+                                            }
+                                            if (s == Screen.Analytics) analyticsKey++
+                                        },
+                                        shape = RoundedCornerShape(percent = 50),
+                                        color = if (sel) Color(0xFF4CAF50) else Color.Transparent
+                                    ) {
+                                        Row(
+                                            Modifier.padding(horizontal = if (sel) 14.dp else 8.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(s.icon, null, Modifier.size(18.dp), tint = if (sel) Color.White else Color(0xFFA5D6A7))
+                                            if (sel) { Spacer(Modifier.width(6.dp)); Text(s.label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White) }
+                                        }
+                                    }
+                                }
+                            }
+                            // OrderEngine circle
+                            Box(
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Surface(
+                                    onClick = { navController.navigate(Screen.OrderEngine.route) },
+                                    modifier = Modifier.size(44.dp),
+                                    shape = CircleShape,
+                                    color = Color(0xFFFF7043),
+                                    shadowElevation = 8.dp
+                                ) {
+                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.ShoppingCart, null, tint = Color.White, modifier = Modifier.size(22.dp))
                                     }
                                 }
                             }
@@ -191,16 +170,13 @@ fun SoloChefApp() {
                 }
             }
         },
-        // ─── Position FAB above bottom bar ──────────────
-        floatingActionButtonPosition = FabPosition.Center
     ) { paddingValues ->
         NavHost(
             navController = navController,
             startDestination = Screen.Dashboard.route,
-            modifier = Modifier.fillMaxSize().then(
-                if (showBottomNav) Modifier.padding(paddingValues)
-                else Modifier.padding(top = paddingValues.calculateTopPadding())
-            )
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
             composable(Screen.Dashboard.route) {
                 DashboardScreen(
@@ -329,49 +305,10 @@ fun SoloChefApp() {
                                 val b = activeBatch ?: return@launch
                                 val idx = b.recipeIds.indexOf(rid)
                                 if (idx < 0) return@launch
-                                val newIds = b.recipeIds.toMutableList().also { it.removeAt(idx) }
-                                if (newIds.isEmpty()) {
-                                    // All done → save last_cooked_at + cooked_count, then thermal receipt
-                                    recipes.find { it.id == rid }?.let { r ->
-                                        val u = r.copy(last_cooked_at = System.currentTimeMillis().toString(), cooked_count = r.cooked_count + 1)
-                                        storage.saveRecipe(u)
-                                        recipes = recipes.map { if (it.id == u.id) u else it }
-                                    }
-                                    // Save cooking record
-                                    recipes.find { it.id == rid }?.let { r ->
-                                        storage.saveCookingRecord(CookingRecord(
-                                            recipeId = r.id, recipeName = r.name, coverImage = r.cover_image,
-                                            cookedAt = System.currentTimeMillis(), tags = r.tags,
-                                            durationMins = r.timeline.sumOf { it.duration } / 60
-                                        ))
-                                    }
-                                    cookingRecords = storage.getCookingRecords()
-                                    stats = stats.ignite().also { storage.saveStats(it) }
-                                    // Capture ALL batch recipe objects for receipt (including the one just completed)
-                                    feedbackBatchRecipes = b.recipeIds.mapNotNull { rid2 -> recipes.find { it.id == rid2 } }
-                                    selectedRecipe = recipes.find { it.id == rid }
-                                    storage.saveActiveBatch(null); activeBatch = null
-                                    navController.navigate("feedback/$rid") { popUpTo(Screen.BatchDetail.route) { inclusive = true } }
-                                } else {
-                                    // Partial complete → stay on current page, update last_cooked_at + cooked_count
-                                    recipes.find { it.id == rid }?.let { r ->
-                                        val u = r.copy(last_cooked_at = System.currentTimeMillis().toString(), cooked_count = r.cooked_count + 1)
-                                        storage.saveRecipe(u)
-                                        recipes = recipes.map { if (it.id == u.id) u else it }
-                                    }
-                                    // Save cooking record
-                                    recipes.find { it.id == rid }?.let { r ->
-                                        storage.saveCookingRecord(CookingRecord(
-                                            recipeId = r.id, recipeName = r.name, coverImage = r.cover_image,
-                                            cookedAt = System.currentTimeMillis(), tags = r.tags,
-                                            durationMins = r.timeline.sumOf { it.duration } / 60
-                                        ))
-                                    }
-                                    cookingRecords = storage.getCookingRecords()
-                                    val u = b.copy(recipeIds = newIds, completedRecipeIds = b.completedRecipeIds + rid)
-                                    storage.saveActiveBatch(u); activeBatch = u
-                                    stats = stats.ignite().also { storage.saveStats(it) }
-                                }
+                                // Don't remove from recipeIds — just mark completed to grey out
+                                val doneIds = b.completedRecipeIds + rid
+                                val u = b.copy(completedRecipeIds = doneIds)
+                                storage.saveActiveBatch(u); activeBatch = u
                             }
                         },
                         onClose = { navController.popBackStack() },
@@ -438,7 +375,16 @@ fun SoloChefApp() {
             }
 
             composable(Screen.Settings.route) {
-                SettingsScreen(onNavigateToLibrary = { navController.navigate(Screen.Library.route) }, onNavigateToAnalytics = { analyticsKey++; navController.navigate(Screen.Analytics.route) })
+                SettingsScreen(
+                    onNavigateToLibrary = { navController.navigate(Screen.Library.route) },
+                    onNavigateToAnalytics = { analyticsKey++; navController.navigate(Screen.Analytics.route) },
+                    onDataChanged = {
+                        scope.launch {
+                            recipes = storage.getAllRecipes()
+                            cookingRecords = storage.getCookingRecords()
+                        }
+                    }
+                )
             }
         }
     }

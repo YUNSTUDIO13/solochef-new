@@ -40,6 +40,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 
+private val MATERIAL_UNITS = listOf("g", "kg", "个", "只", "把", "勺", "包", "盒", "份", "片", "块", "根", "条", "升", "毫升", "杯", "盘", "适量", "少许")
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreateRecipeScreen(
@@ -331,13 +333,41 @@ fun CreateRecipeScreen(
                 }
                 items.forEachIndexed { idx, m ->
                     Surface(Modifier.fillMaxWidth().padding(vertical = 2.dp), RoundedCornerShape(28.dp), Color.White, border = BorderStroke(1.dp, Sage200)) {
-                        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             OutlinedTextField(m.item, { updateMaterial(cat, idx, m.copy(item = it)) }, Modifier.weight(1f), placeholder = { Text("食材", color = Sage300) }, singleLine = true, shape = RoundedCornerShape(0.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent, focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900))
+                            Spacer(Modifier.width(4.dp))
+                            // Amount input
                             Surface(modifier = Modifier.clip(RoundedCornerShape(16.dp)), color = Color.White, border = BorderStroke(1.dp, Sage100)) {
-                                val combinedAmount = if (m.unit.isNotEmpty()) "${m.amount}${m.unit}" else m.amount
-                                BasicTextField(combinedAmount, { updateMaterial(cat, idx, m.copy(amount = it, unit = "")) }, Modifier.width(92.dp).padding(vertical = 4.dp), singleLine = true, textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900, textAlign = TextAlign.Center), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), decorationBox = { innerTextField -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { innerTextField() } })
+                                BasicTextField(m.amount, { updateMaterial(cat, idx, m.copy(amount = it)) }, Modifier.width(56.dp).padding(vertical = 4.dp), singleLine = true, textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900, textAlign = TextAlign.Center), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), decorationBox = { innerTextField -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { innerTextField() } })
                             }
-                            IconButton(onClick = { removeMaterial(cat, idx) }, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Delete, null, tint = Color(0xFFF87171), modifier = Modifier.size(18.dp)) }
+                            Spacer(Modifier.width(2.dp))
+                            // Unit selector
+                            var unitExpanded by remember { mutableStateOf(false) }
+                            Box {
+                                Surface(
+                                    onClick = { unitExpanded = true },
+                                    modifier = Modifier.clip(RoundedCornerShape(16.dp)),
+                                    color = Color.White,
+                                    border = BorderStroke(1.dp, Sage100)
+                                ) {
+                                    Text(
+                                        text = if (m.unit.isEmpty()) "g" else m.unit,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (m.unit.isEmpty()) Sage300 else Sage900
+                                    )
+                                }
+                                DropdownMenu(expanded = unitExpanded, onDismissRequest = { unitExpanded = false }) {
+                                    MATERIAL_UNITS.forEach { unit ->
+                                        DropdownMenuItem(
+                                            text = { Text(unit, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (m.unit == unit) Sage900 else Sage500) },
+                                            onClick = { updateMaterial(cat, idx, m.copy(unit = unit)); unitExpanded = false }
+                                        )
+                                    }
+                                }
+                            }
+                            IconButton(onClick = { removeMaterial(cat, idx) }, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Delete, null, tint = Color(0xFFF87171), modifier = Modifier.size(16.dp)) }
                         }
                     }
                 }

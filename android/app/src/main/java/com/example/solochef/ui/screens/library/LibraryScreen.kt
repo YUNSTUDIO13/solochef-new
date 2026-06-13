@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -67,35 +68,50 @@ fun LibraryScreen(
             
     ) {
         // Header
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 24.dp, bottom = 24.dp)
+                .padding(top = 24.dp, bottom = 24.dp),
+            verticalAlignment = Alignment.Top
         ) {
-            Row(verticalAlignment = Alignment.Bottom) {
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        "菜谱库",
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.05).sp,
+                        color = Sage900
+                    )
+                    Text(
+                        "(${recipes.size})",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Sage400,
+                        modifier = Modifier.padding(start = 6.dp, bottom = 4.dp)
+                    )
+                }
                 Text(
-                    "菜谱库",
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.05).sp,
-                    color = Sage900
-                )
-                Text(
-                    "(${recipes.size})",
-                    fontSize = 20.sp,
+                    "好好吃饭，就是修行",
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Sage400,
-                    modifier = Modifier.padding(start = 6.dp, bottom = 4.dp)
+                    letterSpacing = 2.sp,
+                    color = Sage500,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
-            Text(
-                "好好吃饭，就是修行",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp,
-                color = Sage500,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            // New recipe button
+            Surface(
+                onClick = onCreateClick,
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                color = Color(0xFF2D4A3A),
+                shadowElevation = 8.dp
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Add, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(22.dp))
+                }
+            }
         }
 
         // Search & Filter
@@ -425,38 +441,7 @@ private fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
             }
         }
 
-        Spacer(Modifier.height(1.dp))
-
-        // Steps & Difficulty
-        Row(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                "${recipe.timeline.size} STEPS",
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp,
-                color = Sage400
-            )
-            Box(
-                modifier = Modifier
-                    .size(4.dp)
-                    .background(Sage200, CircleShape)
-            )
-            Text(
-                when (recipe.energy_level) {
-                    EnergyLevel.High -> "困难"
-                    EnergyLevel.Mid -> "一般"
-                    EnergyLevel.Low -> "容易"
-                },
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp,
-                color = Sage400
-            )
-        }
+        Spacer(Modifier.height(8.dp))
     }
 }
 
