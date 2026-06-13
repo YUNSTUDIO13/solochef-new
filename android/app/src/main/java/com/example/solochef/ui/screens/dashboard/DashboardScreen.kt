@@ -70,7 +70,7 @@ fun DashboardScreen(
     val vmA = vm.activeBatch.collectAsStateWithLifecycle()
     val activeBatch = activeBatchOverride ?: vmA.value
     val selProcess by vm.selProcess.collectAsStateWithLifecycle()
-    var randomResult by remember { mutableStateOf<Recipe?>(null) }
+    var showCubeSelector by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     val dynProcesses = remember(recipes) {
@@ -139,22 +139,8 @@ fun DashboardScreen(
                     }
                 }
                 Spacer(Modifier.width(12.dp))
-                Surface(modifier = Modifier.weight(1f).fillMaxHeight().clickable {
-                    val w = System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000
-                    val c = recipes.filter { it.is_featured || (it.last_cooked_at?.toLongOrNull() ?: 0) < w }
-                    if (c.isNotEmpty()) randomResult = c.random()
-                }, shape = RoundedCornerShape(32.dp), color = if (randomResult != null) Color.White else Indigo500) {
-                    randomResult?.let { rr ->
-                        Column(Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
-                            AsyncImage(rr.cover_image, null, Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(rr.name, fontSize = 9.sp, fontWeight = FontWeight.Black, color = Sage900, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Surface(onClick = { onRandomOrder(rr.id); randomResult = null }, modifier = Modifier.padding(top = 6.dp), shape = RoundedCornerShape(50), color = Sage900) {
-                                    Box(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) { Text("下单", fontSize = 8.sp, fontWeight = FontWeight.Black, color = Color.White) }
-                                }
-                            }
-                        }
-                    } ?: Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Indigo500, Sage900), start = androidx.compose.ui.geometry.Offset(0f, 0f), end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY))), contentAlignment = Alignment.Center) {
+                Surface(modifier = Modifier.weight(1f).fillMaxHeight().clickable { showCubeSelector = true }, shape = RoundedCornerShape(32.dp), color = Color.Transparent, border = BorderStroke(1.dp, Indigo400.copy(alpha = 0.3f))) {
+                    Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Indigo500, Sage900), start = Offset(0f, 0f), end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY))), contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White.copy(0.06f), modifier = Modifier.size(120.dp).align(Alignment.BottomEnd).offset(x = 30.dp, y = 30.dp).graphicsLayer(rotationZ = -15f))
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color.White.copy(0.8f), modifier = Modifier.size(20.dp))
@@ -197,6 +183,16 @@ fun DashboardScreen(
                 Spacer(Modifier.height(16.dp))
             }
         }
+    }
+
+    // ── 3D Cube Selector Overlay ──
+    if (showCubeSelector) {
+        RecipeCubeSelector(
+            recipes = recipes,
+            onClose = { showCubeSelector = false },
+            onViewRecipe = { r -> showCubeSelector = false; onSelectRecipe(r) },
+            onCookRecipe = { r -> showCubeSelector = false; onRandomOrder(r.id) }
+        )
     }
 }
 

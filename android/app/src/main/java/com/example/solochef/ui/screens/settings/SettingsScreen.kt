@@ -257,7 +257,8 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                     val recipeEntries = mutableMapOf<String, String>() // prefix -> json content
                     val imageEntries = mutableMapOf<String, MutableMap<String, String>>() // prefix -> (relPath -> localPath)
                     var cookingRecordsJson: String? = null
-                    
+                    var imgCounter = 0
+
                     java.util.zip.ZipInputStream(`in`).use { zis ->
                         var e = zis.nextEntry
                         while (e != null) {
@@ -272,7 +273,8 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                             } else if (name.contains("/images/")) {
                                 val prefix = name.substringBefore("/images/") + "/"
                                 val relPath = "./" + name.substringAfter("$prefix")
-                                val t = java.io.File(importDir, "import_${System.currentTimeMillis()}_${name.substringAfterLast("/")}")
+                                imgCounter++
+                                val t = java.io.File(importDir, "import_${imgCounter}_${name.substringAfterLast("/")}")
                                 t.outputStream().use { o -> var l: Int; while (zis.read(buf).also { l = it } > 0) o.write(buf, 0, l) }
                                 imageEntries.getOrPut(prefix) { mutableMapOf() }[relPath] = t.absolutePath
                             }
@@ -280,38 +282,31 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                         }
                     }
                     
-                    val oldToNewId = mutableMapOf<String, String>() // old recipeId → new recipeId
                     recipeEntries.forEach { (prefix, json) ->
                         val recipe = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; isLenient = true }
                             .decodeFromString<Recipe>(json)
                         val pathMap = imageEntries[prefix] ?: emptyMap()
-                        // Old → new ID mapping for cooking records
-                        val oldId = recipe.id
-                        val newId = System.currentTimeMillis().toString() + "_" + count
+                        // Keep original recipeId — do NOT regenerate
                         val imported = recipe.copy(
-                            id = newId,
                             cover_image = pathMap[recipe.cover_image] ?: recipe.cover_image,
                             bom_snapshot = recipe.bom_snapshot?.let { pathMap[it] ?: it },
                             timeline = recipe.timeline.map { s -> s.copy(images = s.images?.map { pathMap[it] ?: it } ?: s.images) },
                             updated_at = System.currentTimeMillis().toString()
                         )
                         storage.saveRecipe(imported)
-                        // Map old ID to new ID for cooking record restoration
-                        oldToNewId[oldId] = newId
                         count++
                     }
-                    // Restore cooking records (食光日历)
+                    // Restore cooking records (食光日历) — IDs preserved, direct match
                     if (cookingRecordsJson != null) {
                         try {
                             val records = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; isLenient = true }
                                 .decodeFromString<List<com.example.solochef.model.CookingRecord>>(cookingRecordsJson)
-                            // Re-link: map old recipeId → new recipeId + cover_image
                             val allRecipes = storage.getAllRecipes()
                             val idToRecipe = allRecipes.associateBy { it.id }
-                            val mapped = records.mapNotNull { r ->
-                                val newRid = oldToNewId[r.recipeId] ?: return@mapNotNull null
-                                val recipe = idToRecipe[newRid] ?: return@mapNotNull null
-                                r.copy(recipeId = newRid, coverImage = recipe.cover_image, recipeName = recipe.name)
+                            val mapped = records.map { r ->
+                                val recipe = idToRecipe[r.recipeId]
+                                if (recipe != null) r.copy(coverImage = recipe.cover_image, recipeName = recipe.name)
+                                else r
                             }
                             if (mapped.isNotEmpty()) {
                                 storage.saveCookingRecords(mapped)

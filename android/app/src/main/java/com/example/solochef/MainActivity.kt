@@ -114,7 +114,7 @@ fun SoloChefApp() {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(percent = 50),
-                        color = Color(0xFF2D4A3A).copy(alpha = 0.95f),
+                        color = Color(0xFF2D4A3A),
                         shadowElevation = 20.dp
                     ) {
                         Row(

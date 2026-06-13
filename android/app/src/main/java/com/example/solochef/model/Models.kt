@@ -37,7 +37,7 @@ data class TimelineStep(
 data class Material(
     val item: String = "",
     val amount: String = "",
-    val unit: String = "",
+    val unit: String = "g",
     val is_essential: Boolean = true,
     val image: String? = null
 )
