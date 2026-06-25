@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -109,16 +110,26 @@ fun RecipeDetailScreen(
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             row.forEach { m ->
                                 Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
-                                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Surface(modifier = Modifier.size(28.dp), shape = RoundedCornerShape(10.dp), color = Sage50) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("\uD83E\uDD63", fontSize = 14.sp) } }
+                                    Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Text("🥬", fontSize = 16.sp)
                                         Spacer(Modifier.width(8.dp))
-                                        Text(m.item, Modifier.weight(1f), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Sage900, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                        Text(m.amount, fontSize = 11.sp, fontWeight = FontWeight.Black, color = Sage900)
-                                        Text(m.unit, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Sage300, modifier = Modifier.padding(start = 2.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                m.item,
+                                                style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Black, lineHeight = 13.sp),
+                                                color = Sage900,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                "${m.amount}${m.unit}",
+                                                style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 10.sp),
+                                                color = Sage300
+                                            )
+                                        }
                                     }
                                 }
                             }
-                            // Fill empty slot if odd count
                             if (row.size == 1) Spacer(Modifier.weight(1f))
                         }
                         Spacer(Modifier.height(10.dp))

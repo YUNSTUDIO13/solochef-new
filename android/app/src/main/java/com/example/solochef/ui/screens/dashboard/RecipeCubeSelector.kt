@@ -1,5 +1,8 @@
 package com.example.solochef.ui.screens.dashboard
 
+import android.app.Activity
+import android.view.Window
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -12,14 +15,28 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.*
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import coil.compose.AsyncImage
 import com.example.solochef.model.*
 import com.example.solochef.ui.theme.*
 import kotlinx.coroutines.delay
+
+/** 温暖米色底色 — 与参考图一致 */
+val CubeBgCream = Color(0xFFF2EDE8)
+
+/** 卡片圆角 */
+private val CardRadius = RoundedCornerShape(20.dp)
 
 @Composable
 fun RecipeCubeSelector(
@@ -67,55 +84,174 @@ fun RecipeCubeSelector(
     LaunchedEffect(triggerReshuffle) { if (triggerReshuffle) { delay(350); triggerReshuffle = false; shuffleKey++ } }
     LaunchedEffect(shuffleKey) { if (shuffleKey > 0) { delay(200); startScan() } }
 
-    val cell = 100.dp; val g = 8.dp
+    // ── 修复：系统返回手势 → 关闭此页面 ──
+    BackHandler { onClose() }
 
-    Box(Modifier.fillMaxSize().background(Color.White).clickable(MutableInteractionSource(), null) { }) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp).padding(top = 24.dp, bottom = 100.dp)) {
-            Text("今天到底吃点啥？", fontSize = 24.sp, fontWeight = FontWeight.Black, color = Sage900, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-            Text("让食运做出最好的安排", fontSize = 11.sp, color = Sage400, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), textAlign = TextAlign.Center)
+    // ── 修复：状态栏底色与页面一致 + 深色状态栏图标 ──
+    val view = LocalView.current
+    val window = remember(view) { (view.context as Activity).window }
+    DisposableEffect(Unit) {
+        val insetsController = WindowCompat.getInsetsController(window, view)
+        insetsController.isAppearanceLightStatusBars = true
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        val origFlags = window.decorView.systemUiVisibility
+        onDispose {
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+        }
+    }
 
-            Spacer(Modifier.height(24.dp))
+    // ── 自适应卡片尺寸 ──
+    val density = LocalDensity.current
+    val screenWidthDp = with(density) { LocalConfiguration.current.screenWidthDp.dp }
+    val horizontalPadding = 24.dp * 2
+    val gapTotal = 10.dp * 2
+    val cellSize = (screenWidthDp - horizontalPadding - gapTotal) / 3
+    val g = 10.dp
 
+    Box(Modifier.fillMaxSize().background(CubeBgCream)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp)
+                .padding(top = 40.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // ── 标题区域：左对齐 ──
+            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                Text(
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(fontSize = 30.sp, fontWeight = FontWeight.Black, color = Color(0xFF1C1917))) { append("今天到底\n") }
+                        withStyle(SpanStyle(fontSize = 30.sp, fontWeight = FontWeight.Black, color = Color(0xFF1C1917))) { append("吃点啥?") }
+                    },
+                    lineHeight = 36.sp
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "让食运做出最好的安排",
+                    fontSize = 13.sp,
+                    color = Color(0xFF9CA3AF),
+                    letterSpacing = 1.sp
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // ── 3×3 菜谱网格 ──
             Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(g)) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(g)
+                ) {
                     for (row in 0..2) {
                         Row(horizontalArrangement = Arrangement.spacedBy(g)) {
                             for (col in 0..2) {
-                                val i = row * 3 + col; val r = gridItems[i]; val hl = highlightIdx == i; val fin = finalIdx == i
-                                Box(Modifier.size(cell).then(if (fin) Modifier.border(2.5.dp, Color(0xFFFF7043), RoundedCornerShape(16.dp)) else if (hl) Modifier.border(2.5.dp, GreenPlay, RoundedCornerShape(16.dp)) else Modifier.border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))).clip(RoundedCornerShape(16.dp)).background(Color.White)) {
-                                    AsyncImage(r.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)))))
-                                    Text(r.name, Modifier.align(Alignment.BottomStart).padding(8.dp), fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    if (hl && !fin) Box(Modifier.fillMaxSize().background(GreenPlay.copy(alpha = 0.12f)))
-                                }
+                                val i = row * 3 + col
+                                val r = gridItems[i]
+                                val hl = highlightIdx == i
+                                val fin = finalIdx == i
+                                RecipeCard(cell = cellSize, recipe = r, highlighted = hl, finished = fin)
                             }
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Surface(onClick = { startScan() }, enabled = !isScanning, modifier = Modifier.weight(1f).height(50.dp), shape = RoundedCornerShape(50), color = if (isScanning) Color(0xFFCBD5E1) else Color(0xFF2D4A3A)) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(if (isScanning) "转动中..." else "食来运转", fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (isScanning) Color(0xFF64748B) else Color.White) }
+            // ── 底部按钮区：纵向堆叠 ──
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 食来运转 — 绿色填充圆角胶囊按钮（无图标）
+                Surface(
+                    onClick = { startScan() },
+                    enabled = !isScanning,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(50),
+                    color = if (isScanning) Color(0xFFBDBDBD) else Color(0xFF4A7C59)
+                ) {
+                    Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            if (isScanning) "转动中..." else "食来运转",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
-                Surface(onClick = onClose, modifier = Modifier.weight(1f).height(50.dp), shape = RoundedCornerShape(50), color = Color.Transparent, border = BorderStroke(1.5.dp, Sage200)) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("返回首页", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage500) }
+
+                // 返回首页 — 白底绿色边框圆角胶囊按钮
+                Surface(
+                    onClick = onClose,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(50),
+                    color = Color.White,
+                    border = BorderStroke(1.5.dp, Color(0xFF4A7C59))
+                ) {
+                    Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "返回首页",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF4A7C59)
+                        )
+                    }
                 }
             }
         }
 
+        // ── 结果弹窗 ──
         if (showDialog && selectedRecipe != null) {
             val r = selectedRecipe!!
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.65f)).clickable(MutableInteractionSource(), null) { }, contentAlignment = Alignment.Center) {
-                Surface(modifier = Modifier.padding(32.dp).fillMaxWidth(), shape = RoundedCornerShape(32.dp), color = Color(0xFF1C1917), shadowElevation = 24.dp) {
-                    Column(Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("命运的食光之轮选中了【${r.name}】，今日犒劳就它了！", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFCD34D), textAlign = TextAlign.Center)
+            Box(
+                Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.65f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier.padding(32.dp).fillMaxWidth(),
+                    shape = RoundedCornerShape(32.dp),
+                    color = Color(0xFF1C1917),
+                    shadowElevation = 24.dp
+                ) {
+                    Column(
+                        Modifier.padding(28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "命运的食光之轮选中了【${r.name}】，今日犒劳就它了！",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFCD34D),
+                            textAlign = TextAlign.Center
+                        )
                         Spacer(Modifier.height(14.dp))
-                        Surface(modifier = Modifier.size(120.dp), shape = RoundedCornerShape(24.dp), shadowElevation = 8.dp) { AsyncImage(r.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
+                        Surface(
+                            modifier = Modifier.size(120.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            shadowElevation = 8.dp
+                        ) {
+                            AsyncImage(r.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                        }
                         Spacer(Modifier.height(12.dp))
-                        Text(r.name, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White, textAlign = TextAlign.Center)
+                        Text(
+                            r.name,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            textAlign = TextAlign.Center
+                        )
                         if (r.tags.isNotEmpty()) {
                             Spacer(Modifier.height(8.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -132,14 +268,96 @@ fun RecipeCubeSelector(
                         }
                         Spacer(Modifier.height(20.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Surface(onClick = { showDialog = false; selectedRecipe = null; triggerReshuffle = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.08f)) { Box(Modifier.padding(vertical = 14.dp), contentAlignment = Alignment.Center) { Text("再来一次", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.6f)) } }
-                            Surface(onClick = { onCookRecipe(r) }, modifier = Modifier.weight(1.2f), shape = RoundedCornerShape(50), color = GreenPlay) { Box(Modifier.padding(vertical = 14.dp), contentAlignment = Alignment.Center) { Text("就吃这个", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) } }
+                            Surface(
+                                onClick = { showDialog = false; selectedRecipe = null; triggerReshuffle = true },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(50),
+                                color = Color.White.copy(alpha = 0.08f)
+                            ) {
+                                Box(Modifier.padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
+                                    Text("再来一次", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.6f))
+                                }
+                            }
+                            Surface(
+                                onClick = { onCookRecipe(r) },
+                                modifier = Modifier.weight(1.2f),
+                                shape = RoundedCornerShape(50),
+                                color = GreenPlay
+                            ) {
+                                Box(Modifier.padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
+                                    Text("就吃这个", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                                }
+                            }
                         }
                         Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { showDialog = false }) { Text("关闭", fontSize = 12.sp, color = Color.White.copy(alpha = 0.35f)) }
+                        TextButton(onClick = { showDialog = false }) {
+                            Text("关闭", fontSize = 12.sp, color = Color.White.copy(alpha = 0.35f))
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+/** 单个菜谱卡片 — 圆角大图 + 底部渐变蒙层 + 居中文案 */
+@Composable
+private fun RecipeCard(
+    cell: Dp,
+    recipe: Recipe,
+    highlighted: Boolean,
+    finished: Boolean
+) {
+    Box(
+        Modifier
+            .size(cell)
+            .clip(CardRadius)
+            .then(
+                when {
+                    finished -> Modifier.border(2.5.dp, Color(0xFFFF7043), CardRadius)
+                    highlighted -> Modifier.border(2.5.dp, GreenPlay, CardRadius)
+                    else -> Modifier.border(0.5.dp, Color(0x1A000000), CardRadius)
+                }
+            )
+    ) {
+        AsyncImage(
+            recipe.cover_image,
+            null,
+            Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)),
+                        startY = 0f,
+                        endY = Float.POSITIVE_INFINITY
+                    )
+                )
+        )
+
+        if (highlighted && !finished) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(GreenPlay.copy(alpha = 0.15f))
+            )
+        }
+
+        Text(
+            recipe.name,
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 6.dp, vertical = 8.dp),
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
     }
 }

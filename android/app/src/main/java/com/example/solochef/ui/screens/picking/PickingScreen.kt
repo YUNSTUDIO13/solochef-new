@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -101,14 +102,17 @@ fun PickingScreen(
                                     color = if (isChecked) Sage800 else Color.White,
                                     border = BorderStroke(1.dp, if (isChecked) Sage800 else Sage200)
                                 ) {
-                                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Box(Modifier.size(20.dp).border(2.dp, if (isChecked) Color.White else Sage200, RoundedCornerShape(5.dp)).background(if (isChecked) Color.White else Color.Transparent, RoundedCornerShape(5.dp)), contentAlignment = Alignment.Center) {
-                                            if (isChecked) Icon(Icons.Default.Check, contentDescription = null, tint = Sage800, modifier = Modifier.size(12.dp))
+                                    Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Box(Modifier.size(18.dp).border(2.dp, if (isChecked) Color.White else Sage200, RoundedCornerShape(5.dp)).background(if (isChecked) Color.White else Color.Transparent, RoundedCornerShape(5.dp)), contentAlignment = Alignment.Center) {
+                                            if (isChecked) Icon(Icons.Default.Check, contentDescription = null, tint = Sage800, modifier = Modifier.size(11.dp))
                                         }
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(m.item, Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (isChecked) Color.White else Sage900, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                        Text(m.amount, fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (isChecked) Color.White else Sage900)
-                                        Text(m.unit, fontSize = 9.sp, color = if (isChecked) Color.White.copy(0.6f) else Sage300, modifier = Modifier.padding(start = 1.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("🥬", fontSize = 14.sp)
+                                        Spacer(Modifier.width(6.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(m.item, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Black, lineHeight = 13.sp), color = if (isChecked) Color.White else Sage900, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                            Text("${m.amount}${m.unit}", style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 10.sp), color = if (isChecked) Color.White.copy(0.6f) else Sage300)
+                                        }
                                     }
                                 }
                             }

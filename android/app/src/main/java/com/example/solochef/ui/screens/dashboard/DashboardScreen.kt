@@ -65,6 +65,7 @@ fun DashboardScreen(
     onViewAllFeatured: () -> Unit = {},
     onViewAllTasting: () -> Unit = {},
     onSelectTasting: (String) -> Unit = {},
+    onCubeSelectorChanged: (Boolean) -> Unit = {},
     tastingNotes: List<com.example.solochef.model.TastingNote> = emptyList(),
     activeBatchOverride: OrderBatch? = null,
     vm: DashboardViewModel = viewModel()
@@ -75,6 +76,7 @@ fun DashboardScreen(
     val activeBatch = activeBatchOverride ?: vmA.value
     val selProcess by vm.selProcess.collectAsStateWithLifecycle()
     var showCubeSelector by remember { mutableStateOf(false) }
+    LaunchedEffect(showCubeSelector) { onCubeSelectorChanged(showCubeSelector) }
     val scope = rememberCoroutineScope()
 
     val featured = remember(recipes) {

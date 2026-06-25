@@ -109,7 +109,8 @@ fun SoloChefApp() {
     }
 
     val mainScreens = listOf(Screen.Dashboard, Screen.Library, Screen.Analytics, Screen.Settings)
-    val showBottomNav = currentRoute in mainScreens.map { it.route }
+    var hideBottomForCube by remember { mutableStateOf(false) }
+    val showBottomNav = currentRoute in mainScreens.map { it.route } && !hideBottomForCube
     val showFAB = currentRoute == Screen.Dashboard.route || currentRoute == Screen.Library.route
 
     Scaffold(
@@ -201,6 +202,7 @@ fun SoloChefApp() {
                     onViewAllFeatured = { navController.navigate(Screen.FeaturedAll.route) },
                     onViewAllTasting = { navController.navigate(Screen.TastingAll.route) },
                     onSelectTasting = { id -> navController.navigate("tasting_detail/$id") },
+                    onCubeSelectorChanged = { hideBottomForCube = it },
                     onRandomOrder = { id ->
                         scope.launch {
                             val b = OrderBatch(id = System.currentTimeMillis().toString(), status = BatchStatus.Picking, recipeIds = listOf(id), completedRecipeIds = emptyList(), created_at = System.currentTimeMillis().toString())

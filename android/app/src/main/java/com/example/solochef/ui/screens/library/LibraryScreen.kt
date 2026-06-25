@@ -24,8 +24,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -339,109 +342,93 @@ private fun FilterChip(
 
 @Composable
 private fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
-    Column(
+    val processTag = recipe.tags.firstOrNull { it in COOKING_PROCESS_TAGS }
+    val cuisineTag = recipe.tags.firstOrNull { it in CUISINE_TAGS }
+    val cookTime = recipe.timeline.sumOf { it.duration } / 60
+
+    // 构建三字段文本行（无背景，纯白色文字）
+    val metaLine = listOfNotNull(
+        "${cookTime}min",
+        processTag,
+        cuisineTag
+    ).joinToString("  ·  ")
+
+    Box(
         modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(28.dp))
+            .background(Color.White)
             .clickable(onClick = onClick)
     ) {
-        // Image
+        AsyncImage(
+            model = recipe.cover_image,
+            contentDescription = recipe.name,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        // 渐变蒙层 (与首页推荐菜一致: transparent → Black60)
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(28.dp))
-                .background(Color.White)
-        ) {
-            AsyncImage(
-                model = recipe.cover_image,
-                contentDescription = recipe.name,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            // Cooking time: sum of ALL step durations
-            val cookTime = recipe.timeline.sumOf { it.duration } / 60
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Transparent, Black60),
+                        startY = 0f,
+                        endY = Float.POSITIVE_INFINITY
+                    )
+                )
+        )
+
+        // 推荐标签 — 右上角
+        if (recipe.is_featured) {
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(8.dp)
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color.White.copy(alpha = 0.22f))
-                    .border(0.5.dp, Color.White.copy(alpha = 0.45f), RoundedCornerShape(6.dp)),
+                    .align(Alignment.TopEnd)
+                    .padding(10.dp)
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(Amber400),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "${cookTime}",
-                        fontSize = 13.sp,
+                Text(
+                    "荐",
+                    style = TextStyle(
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
-                        color = Color.White,
-                        lineHeight = 15.sp
-                    )
-                    Text(
-                        "min",
-                        fontSize = 7.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White.copy(alpha = 0.75f),
-                        lineHeight = 9.sp
-                    )
-                }
+                        lineHeight = 9.sp,
+                        textAlign = TextAlign.Center,
+                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                    ),
+                    color = Sage900
+                )
             }
         }
 
-        Spacer(Modifier.height(4.dp))
-
-        // Title & Featured badge
-        Row(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        // 底部：三字段（上） + 菜谱名称（下）
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(12.dp)
         ) {
+            // 烹饪时长 · 烹饪工艺 · 菜系纬度（7sp，无背景纯文字，单行省略）
+            Text(
+                metaLine,
+                style = TextStyle(fontSize = 7.sp, fontWeight = FontWeight.Bold, lineHeight = 7.sp, platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                color = Color.White.copy(alpha = 0.7f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            // 菜谱名称（最下方）
             Text(
                 recipe.name,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Black,
-                color = Sage900,
+                style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Black, lineHeight = 13.sp, platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                color = Color.White,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
+                overflow = TextOverflow.Ellipsis
             )
-            if (recipe.is_featured) {
-                Box(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clip(CircleShape)
-                        .background(Amber400),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("荐", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center)
-                }
-            }
         }
-
-        Spacer(Modifier.height(1.dp))
-
-        // Tags
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(horizontal = 4.dp)
-        ) {
-            recipe.tags.take(2).forEach { tag ->
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = Gray100
-                ) {
-                    Text(
-                        tag,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Gray500
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
     }
 }
 
