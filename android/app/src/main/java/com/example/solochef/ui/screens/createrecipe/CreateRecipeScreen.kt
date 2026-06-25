@@ -40,7 +40,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 
-private val MATERIAL_UNITS = listOf("g", "kg", "个", "只", "把", "勺", "包", "盒", "份", "片", "块", "根", "条", "升", "毫升", "杯", "盘", "适量", "少许")
+private val MATERIAL_UNITS = listOf("g", "kg", "个", "只", "把", "勺", "包", "盒", "份", "片", "块", "根", "条", "升", "毫升", "杯", "盘", "粒", "适量", "少许")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -224,7 +224,7 @@ fun CreateRecipeScreen(
                     }
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("主推菜", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
+                    Text("主厨力荐", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
                     Surface(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), shape = RoundedCornerShape(16.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
                         Row(Modifier.padding(4.dp)) {
                             Surface(onClick = { featured.value = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = if (featured.value) Sage800 else Color.Transparent) { Text("是 (Yes)", modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (featured.value) Color.White else Sage400) }
@@ -341,37 +341,99 @@ fun CreateRecipeScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("数量", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Sage500)
                                 Spacer(Modifier.width(6.dp))
-                                Surface(modifier = Modifier.clip(RoundedCornerShape(12.dp)), color = Color.White, border = BorderStroke(1.dp, Sage100)) {
-                                    BasicTextField(m.amount, { updateMaterial(cat, idx, m.copy(amount = it)) }, Modifier.width(64.dp).padding(vertical = 6.dp), singleLine = true, textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage900, textAlign = TextAlign.Center), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), decorationBox = { innerTextField -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { innerTextField() } })
+                                Box(
+                                    modifier = Modifier
+                                        .width(64.dp)
+                                        .background(Color.White, RoundedCornerShape(12.dp))
+                                        .border(1.dp, Sage100, RoundedCornerShape(12.dp))
+                                        .padding(vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    BasicTextField(
+                                        value = m.amount,
+                                        onValueChange = { updateMaterial(cat, idx, m.copy(amount = it)) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true,
+                                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage900, textAlign = TextAlign.Center),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        decorationBox = { innerTextField ->
+                                            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                                innerTextField()
+                                            }
+                                        }
+                                    )
                                 }
                                 Spacer(Modifier.width(12.dp))
                                 Text("单位", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Sage500)
                                 Spacer(Modifier.width(6.dp))
                                 val unitLabel = m.unit.ifEmpty { "g" }
-                                var unitExpanded by remember { mutableStateOf(false) }
-                                Box {
-                                    Surface(
-                                        onClick = { unitExpanded = true },
-                                        modifier = Modifier.clip(RoundedCornerShape(12.dp)),
-                                        color = Color.White,
-                                        border = BorderStroke(1.dp, Sage100)
-                                    ) {
-                                        Text(
-                                            text = unitLabel,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Sage900
-                                        )
-                                    }
-                                    DropdownMenu(expanded = unitExpanded, onDismissRequest = { unitExpanded = false }) {
-                                        MATERIAL_UNITS.forEach { unit ->
-                                            DropdownMenuItem(
-                                                text = { Text(unit, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (unitLabel == unit) GreenPlay else Sage500) },
-                                                onClick = { updateMaterial(cat, idx, m.copy(unit = unit)); unitExpanded = false }
-                                            )
-                                        }
-                                    }
+                                var showUnitDialog by remember { mutableStateOf(false) }
+                                Surface(
+                                    onClick = { showUnitDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color.White,
+                                    border = BorderStroke(1.dp, Sage100)
+                                ) {
+                                    Text(
+                                        text = unitLabel,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Sage900
+                                    )
+                                }
+                                if (showUnitDialog) {
+                                    AlertDialog(
+                                        onDismissRequest = { showUnitDialog = false },
+                                        title = {
+                                            Text("选择单位", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Sage900)
+                                        },
+                                        text = {
+                                            val rows = MATERIAL_UNITS.chunked(6)
+                                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                rows.forEach { rowUnits ->
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                    ) {
+                                                        rowUnits.forEach { unit ->
+                                                            val isSelected = unitLabel == unit
+                                                            Surface(
+                                                                onClick = {
+                                                                    updateMaterial(cat, idx, m.copy(unit = unit))
+                                                                    showUnitDialog = false
+                                                                },
+                                                                modifier = Modifier.weight(1f),
+                                                                shape = RoundedCornerShape(12.dp),
+                                                                color = if (isSelected) Sage800 else Sage50,
+                                                                border = BorderStroke(1.dp, if (isSelected) Sage800 else Sage100)
+                                                            ) {
+                                                                Text(
+                                                                    text = unit,
+                                                                    modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(),
+                                                                    textAlign = TextAlign.Center,
+                                                                    fontSize = 13.sp,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    color = if (isSelected) Color.White else Sage500
+                                                                )
+                                                            }
+                                                        }
+                                                        repeat(6 - rowUnits.size) {
+                                                            Spacer(Modifier.weight(1f))
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        confirmButton = {},
+                                        dismissButton = {
+                                            TextButton(onClick = { showUnitDialog = false }) {
+                                                Text("取消", color = Sage500)
+                                            }
+                                        },
+                                        containerColor = Color.White,
+                                        shape = RoundedCornerShape(24.dp)
+                                    )
                                 }
                                 Spacer(Modifier.weight(1f))
                                 IconButton(onClick = { removeMaterial(cat, idx) }, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, null, tint = Color(0xFFF87171), modifier = Modifier.size(16.dp)) }
@@ -496,7 +558,7 @@ fun CreateRecipeScreen(
                         bom_snapshot = bomSnapshot,
                         energy_level = energy.value, is_featured = featured.value,
                         cost = c, price = p,
-                        materials = materials.value.mapValues { it.value.toList() },
+                        materials = materials.value.mapValues { (_, mats) -> mats.map { if (it.unit.isEmpty()) it.copy(unit = "g") else it } },
                         timeline = timeline.value,
                         tags = tags.value,
                         updated_at = System.currentTimeMillis().toString()

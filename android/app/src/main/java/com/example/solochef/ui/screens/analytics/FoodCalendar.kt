@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,17 +48,26 @@ data class CalendarDay(
 fun FoodCalendar(
     records: List<CookingRecord>,
     recipes: List<Recipe>,
-    onSelectRecipe: (Recipe) -> Unit
+    onSelectRecipe: (Recipe) -> Unit,
+    onShareReceipt: ((List<Recipe>) -> Unit)? = null,
+    onDeleteRecord: ((String) -> Unit)? = null,
+    onCreateRecord: ((Long) -> Unit)? = null
 ) {
     val cal = remember { Calendar.getInstance() }
     var currentMonth by remember { mutableIntStateOf(cal.get(Calendar.MONTH)) }
     var currentYear by remember { mutableIntStateOf(cal.get(Calendar.YEAR)) }
     var selectedDay by remember { mutableStateOf<CalendarDay?>(null) }
+    var showMonthPicker by remember { mutableStateOf(false) }
+    var pickerYear by remember { mutableIntStateOf(cal.get(Calendar.YEAR)) }
 
     val today = Calendar.getInstance()
     val todayYear = today.get(Calendar.YEAR)
     val todayMonth = today.get(Calendar.MONTH)
     val todayDay = today.get(Calendar.DAY_OF_MONTH)
+
+    // Year range: 2024 to current year + 1
+    val yearRange = (2024..todayYear + 1).toList()
+    val months = listOf("1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月")
 
     // Build day grid
     val days = remember(currentMonth, currentYear, records) {
@@ -71,7 +81,7 @@ fun FoodCalendar(
     val monthLabel = "${currentYear}年${currentMonth + 1}月"
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Month navigation
+        // Month navigation with clickable picker
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -86,16 +96,102 @@ fun FoodCalendar(
             ) {
                 Icon(Icons.Default.KeyboardArrowLeft, null, tint = Sage500, modifier = Modifier.size(20.dp))
             }
-            Text(monthLabel, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
-            IconButton(
-                onClick = {
-                    if (currentMonth == 11) { currentMonth = 0; currentYear++ }
-                    else currentMonth++
-                },
-                modifier = Modifier.size(32.dp)
+            Surface(
+                onClick = { pickerYear = currentYear; showMonthPicker = true },
+                shape = RoundedCornerShape(12.dp),
+                color = Sage100
             ) {
-                Icon(Icons.Default.KeyboardArrowRight, null, tint = Sage500, modifier = Modifier.size(20.dp))
+                Text(
+                    monthLabel, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900
+                )
             }
+            Row {
+                // Jump to today
+                val isCurrentView = currentYear == todayYear && currentMonth == todayMonth
+                if (!isCurrentView) {
+                    TextButton(
+                        onClick = { currentYear = todayYear; currentMonth = todayMonth }
+                    ) {
+                        Text("今天", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage400)
+                    }
+                }
+                IconButton(
+                    onClick = {
+                        if (currentMonth == 11) { currentMonth = 0; currentYear++ }
+                        else currentMonth++
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(Icons.Default.KeyboardArrowRight, null, tint = Sage500, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+
+        // Month picker dialog
+        if (showMonthPicker) {
+            AlertDialog(
+                onDismissRequest = { showMonthPicker = false },
+                title = { Text("选择月份", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900) },
+                text = {
+                    Column(Modifier.verticalScroll(rememberScrollState())) {
+                        // Year selector
+                        Text("年份", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
+                        Spacer(Modifier.height(8.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(yearRange) { yr ->
+                                val sel = yr == pickerYear
+                                Surface(
+                                    onClick = { pickerYear = yr },
+                                    shape = RoundedCornerShape(20),
+                                    color = if (sel) Sage800 else Color.Transparent
+                                ) {
+                                    Text(
+                                        "${yr}", modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                        fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                                        color = if (sel) Color.White else Sage500
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        // Month grid
+                        Text("月份", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
+                        Spacer(Modifier.height(8.dp))
+                        months.chunked(4).forEach { row ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                row.forEachIndexed { _, m ->
+                                    val mIdx = months.indexOf(m)
+                                    val sel = mIdx == currentMonth && pickerYear == currentYear
+                                    Surface(
+                                        onClick = { currentMonth = mIdx; currentYear = pickerYear; showMonthPicker = false },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(20),
+                                        color = if (sel) Sage800 else Color.Transparent
+                                    ) {
+                                        Text(
+                                            m, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(),
+                                            textAlign = TextAlign.Center,
+                                            fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                            color = if (sel) Color.White else Sage500
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(8.dp))
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        currentYear = pickerYear
+                        showMonthPicker = false
+                    }) { Text("确定", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Sage800) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showMonthPicker = false }) { Text("取消", fontSize = 12.sp, color = Sage400) }
+                }
+            )
         }
 
         Spacer(Modifier.height(8.dp))
@@ -125,7 +221,7 @@ fun FoodCalendar(
                                         day = day,
                                         isSelected = selectedDay?.let { it.date == day.date && it.month == day.month && it.year == day.year } == true,
                                         onClick = {
-                                            selectedDay = if (day.records.isNotEmpty()) day else null
+                                            selectedDay = day
                                         }
                                     )
                                 }
@@ -145,7 +241,10 @@ fun FoodCalendar(
             day = selectedDay!!,
             recipes = recipes,
             onDismiss = { selectedDay = null },
-            onSelectRecipe = onSelectRecipe
+            onSelectRecipe = onSelectRecipe,
+            onShareReceipt = onShareReceipt,
+            onDeleteRecord = onDeleteRecord,
+            onCreateRecord = onCreateRecord
         )
     }
 }
@@ -266,7 +365,10 @@ private fun DayDetailSheet(
     day: CalendarDay,
     recipes: List<Recipe>,
     onDismiss: () -> Unit,
-    onSelectRecipe: (Recipe) -> Unit
+    onSelectRecipe: (Recipe) -> Unit,
+    onShareReceipt: ((List<Recipe>) -> Unit)? = null,
+    onDeleteRecord: ((String) -> Unit)? = null,
+    onCreateRecord: ((Long) -> Unit)? = null
 ) {
     val sdf = SimpleDateFormat("M月d日 · EEEE", Locale.CHINESE)
     val cal = Calendar.getInstance().apply {
@@ -275,14 +377,46 @@ private fun DayDetailSheet(
         set(Calendar.DAY_OF_MONTH, day.date)
     }
     val dateLabel = sdf.format(cal.time)
+    val dayTimestamp = cal.timeInMillis
 
-    // Map record recipeIds to actual Recipe objects
-    val dayRecipes = day.records.mapNotNull { record ->
-        recipes.find { it.id == record.recipeId }
-    }.distinctBy { it.id }
+    // Group records by recipeId with counts
+    data class DayRecipeEntry(val recipe: Recipe, val count: Int, val recordIds: List<String>)
+    val dayEntries: List<DayRecipeEntry> = day.records
+        .groupBy { it.recipeId }
+        .mapNotNull { (rid, recs) ->
+            recipes.find { it.id == rid }?.let { DayRecipeEntry(it, recs.size, recs.map { r -> r.id }) }
+        }
+
+    val receiptRecipes: List<Recipe> = day.records.mapNotNull { r -> recipes.find { it.id == r.recipeId } }
+
+    // Delete confirmation dialog
+    var deleteRecordId by remember { mutableStateOf<String?>(null) }
+    if (deleteRecordId != null) {
+        AlertDialog(
+            onDismissRequest = { deleteRecordId = null },
+            title = { Text("请确认是否删除？", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900) },
+            text = { Text("删除后无法恢复", fontSize = 13.sp, color = Sage500) },
+            confirmButton = {
+                TextButton(onClick = { deleteRecordId = null }) {
+                    Text("取消", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Sage800)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    val id = deleteRecordId; deleteRecordId = null
+                    onDeleteRecord?.invoke(id!!)
+                }) {
+                    Text("确认", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFEF4444))
+                }
+            }
+        )
+    }
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = Color.White,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         dragHandle = {
@@ -303,18 +437,102 @@ private fun DayDetailSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(dateLabel, fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900)
-                Text("共${dayRecipes.size}道菜", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Sage400, letterSpacing = 2.sp)
+                if (dayEntries.isNotEmpty()) {
+                    Text("共${dayEntries.sumOf { it.count }}份·${dayEntries.size}道菜", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Sage400, letterSpacing = 2.sp)
+                }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            if (dayRecipes.isEmpty()) {
-                Text("暂无菜谱数据", fontSize = 12.sp, color = Sage300, modifier = Modifier.padding(vertical = 16.dp))
+            if (dayEntries.isEmpty()) {
+                // Empty state — "新建食光" button
+                Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Restaurant, null, tint = Sage300, modifier = Modifier.size(48.dp))
+                        Spacer(Modifier.height(16.dp))
+                        Surface(
+                            onClick = { onCreateRecord?.invoke(dayTimestamp) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            color = Sage800
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(14.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("新建食光", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            }
+                        }
+                    }
+                }
             } else {
-                dayRecipes.forEachIndexed { i, recipe ->
-                    DayRecipeRow(recipe = recipe, onClick = { onSelectRecipe(recipe) })
-                    if (i < dayRecipes.size - 1) {
+                // Records with swipe-to-delete
+                dayEntries.forEachIndexed { i, entry ->
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { value ->
+                            if (value == SwipeToDismissBoxValue.EndToStart) {
+                                deleteRecordId = entry.recordIds.first()
+                            }
+                            false // Always reset to original position
+                        }
+                    )
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        backgroundContent = {
+                            Box(
+                                Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp))
+                                    .background(Color.White),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                IconButton(
+                                    onClick = { deleteRecordId = entry.recordIds.first() },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete, null,
+                                        tint = Color(0xFFEF4444),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        },
+                        enableDismissFromStartToEnd = true,
+                        enableDismissFromEndToStart = true
+                    ) {
+                        Surface(color = Color.White) {
+                            DayRecipeRow(
+                                recipe = entry.recipe,
+                                count = entry.count,
+                                onClick = { onSelectRecipe(entry.recipe) }
+                            )
+                        }
+                    }
+                    if (i < dayEntries.size - 1) {
                         HorizontalDivider(color = Sage50, modifier = Modifier.padding(vertical = 4.dp))
+                    }
+                }
+            }
+
+            // Share receipt button (only when has records)
+            if (onShareReceipt != null && receiptRecipes.isNotEmpty()) {
+                Spacer(Modifier.height(20.dp))
+                Surface(
+                    onClick = { onShareReceipt(receiptRecipes) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    color = Sage800
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(14.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Share, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("分享小票", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
                     }
                 }
             }
@@ -323,7 +541,7 @@ private fun DayDetailSheet(
 }
 
 @Composable
-private fun DayRecipeRow(recipe: Recipe, onClick: () -> Unit) {
+private fun DayRecipeRow(recipe: Recipe, count: Int = 1, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -366,6 +584,23 @@ private fun DayRecipeRow(recipe: Recipe, onClick: () -> Unit) {
                     fontWeight = FontWeight.Bold
                 )
             }
+        }
+
+        // Quantity badge
+        if (count > 1) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = Sage800.copy(alpha = 0.1f)
+            ) {
+                Text(
+                    "x$count",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Sage800
+                )
+            }
+            Spacer(Modifier.width(8.dp))
         }
 
         Icon(Icons.Default.KeyboardArrowRight, null, tint = Sage300, modifier = Modifier.size(18.dp))

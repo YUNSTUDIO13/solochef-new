@@ -62,6 +62,10 @@ fun DashboardScreen(
     onOpenBatch: () -> Unit,
     onSelectRecipe: (Recipe) -> Unit,
     onRandomOrder: (String) -> Unit,
+    onViewAllFeatured: () -> Unit = {},
+    onViewAllTasting: () -> Unit = {},
+    onSelectTasting: (String) -> Unit = {},
+    tastingNotes: List<com.example.solochef.model.TastingNote> = emptyList(),
     activeBatchOverride: OrderBatch? = null,
     vm: DashboardViewModel = viewModel()
 ) {
@@ -73,23 +77,15 @@ fun DashboardScreen(
     var showCubeSelector by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    val dynProcesses = remember(recipes) {
-        val s = recipes.flatMap { it.tags }.filter { it in COOKING_PROCESS_TAGS }.toSet()
-        listOf("全部") + s.sortedBy { COOKING_PROCESS_TAGS.indexOf(it) }
-    }
-    val featured = remember(recipes, selProcess) {
-        recipes.filter { r ->
-            if (!r.is_featured) return@filter false
-            if (selProcess == "全部") true
-            else r.tags.contains(selProcess)
-        }
-        .sortedByDescending { it.cooked_count }
+    val featured = remember(recipes) {
+        recipes.filter { it.is_featured }
+            .sortedByDescending { it.cooked_count }
     }
 
-    Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 80.dp)) {
+    Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 120.dp)) {
         Spacer(Modifier.height(24.dp))
         Text("独厨SoloChef", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
-        Text("你的精品线上厨房", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 4.dp))
+        Text("人生不将就，从我的精品厨房开始", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 4.dp))
         Spacer(Modifier.height(16.dp))
 
         // Task Module (no FireStatusHeader per web spec)
@@ -155,32 +151,134 @@ fun DashboardScreen(
 
         Spacer(Modifier.height(24.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("推荐菜 (Featured)", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
+            Text("主厨力荐", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
             Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Sage400, modifier = Modifier.size(14.dp))
         }
-        Spacer(Modifier.height(6.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(dynProcesses) { tag ->
-                val sel = tag == selProcess
-                Surface(onClick = { vm.select(tag) }, modifier = Modifier, shape = RoundedCornerShape(50), color = if (sel) Sage900 else Color.White, border = BorderStroke(1.dp, if (sel) Sage900 else Sage200)) {
-                    Box(Modifier.padding(horizontal = 16.dp, vertical = 1.dp)) { Text(tag, fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (sel) Color.White else Sage400) }
-                }
-            }
-        }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
         if (featured.isEmpty()) {
             Surface(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage100)) {
-                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { Text("暂无推荐菜谱", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage300) }
+                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { Text("暂无主厨力荐", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage300) }
             }
         } else {
-            for (i in featured.indices step 2) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Card(recipe = featured[i], onClick = onSelectRecipe, modifier = Modifier.weight(1f))
-                    if (i + 1 < featured.size) Card(recipe = featured[i + 1], onClick = onSelectRecipe, modifier = Modifier.weight(1f))
-                    else Spacer(Modifier.weight(1f))
+            // Horizontal scroll — max 6 visible + "更多力荐"
+            val displayList = featured.take(6)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(displayList) { recipe ->
+                    Card(recipe = recipe, onClick = { onSelectRecipe(recipe) }, modifier = Modifier.width(140.dp))
                 }
-                Spacer(Modifier.height(16.dp))
+                if (featured.size > 6) {
+                    item {
+                        Box(
+                            modifier = Modifier.width(140.dp).aspectRatio(1f).clip(RoundedCornerShape(32.dp))
+                                .background(Sage900.copy(alpha = 0.9f))
+                                .clickable { onViewAllFeatured() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.AutoAwesome, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                                Spacer(Modifier.height(8.dp))
+                                Text("更多力荐", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                                Text("${featured.size}道", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(0.6f))
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 拾味手记 ──
+            Spacer(Modifier.height(24.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("拾味手记", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
+                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(14.dp))
+            }
+            Spacer(Modifier.height(12.dp))
+
+            if (tastingNotes.isEmpty()) {
+                Surface(
+                    onClick = { },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(32.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Sage100)
+                ) {
+                    Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
+                        Text("拾藏心头百味，静待下厨之时", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Sage400)
+                    }
+                }
+            } else {
+                val sortedTasting = tastingNotes.sortedByDescending { it.rating }
+                val displayTasting = sortedTasting.take(6)
+                // Vertical grid — 2 columns, same size as 主厨力荐 Card
+                for (i in displayTasting.indices step 2) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Box(
+                            modifier = Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(32.dp))
+                                .background(Sage200).clickable { onSelectTasting(displayTasting[i].id) }
+                        ) {
+                            val note = displayTasting[i]
+                            if (note.coverImage.isNotEmpty()) {
+                                AsyncImage(note.coverImage, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                            }
+                            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Black60))))
+                            Column(Modifier.align(Alignment.BottomStart).padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    val fullStars = note.rating.toInt()
+                                    val hasHalf = note.rating - fullStars >= 0.5f
+                                    repeat(fullStars) { Icon(Icons.Default.Star, null, tint = Color(0xFFFF9800), modifier = Modifier.size(10.dp)) }
+                                    if (hasHalf) Icon(Icons.Default.StarHalf, null, tint = Color(0xFFFF9800), modifier = Modifier.size(10.dp))
+                                    repeat(5 - fullStars - (if (hasHalf) 1 else 0)) { Icon(Icons.Default.Star, null, tint = Color.White.copy(0.3f), modifier = Modifier.size(10.dp)) }
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(if (note.note.length > 8) note.note.take(8) + "…" else note.note.ifEmpty { "未命名" }, fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                        if (i + 1 < displayTasting.size) {
+                            Box(
+                                modifier = Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(32.dp))
+                                    .background(Sage200).clickable { onSelectTasting(displayTasting[i + 1].id) }
+                            ) {
+                                val note2 = displayTasting[i + 1]
+                                if (note2.coverImage.isNotEmpty()) {
+                                    AsyncImage(note2.coverImage, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                }
+                                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Black60))))
+                                Column(Modifier.align(Alignment.BottomStart).padding(12.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        val fullStars = note2.rating.toInt()
+                                        val hasHalf = note2.rating - fullStars >= 0.5f
+                                        repeat(fullStars) { Icon(Icons.Default.Star, null, tint = Color(0xFFFF9800), modifier = Modifier.size(10.dp)) }
+                                        if (hasHalf) Icon(Icons.Default.StarHalf, null, tint = Color(0xFFFF9800), modifier = Modifier.size(10.dp))
+                                        repeat(5 - fullStars - (if (hasHalf) 1 else 0)) { Icon(Icons.Default.Star, null, tint = Color.White.copy(0.3f), modifier = Modifier.size(10.dp)) }
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(if (note2.note.length > 8) note2.note.take(8) + "…" else note2.note.ifEmpty { "未命名" }, fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                            }
+                        } else {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
+                // 更多拾味 button
+                if (sortedTasting.size > 6) {
+                    Surface(
+                        onClick = { onViewAllTasting() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        color = Sage900.copy(alpha = 0.06f),
+                        border = BorderStroke(1.dp, Sage200)
+                    ) {
+                        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Star, null, tint = Color(0xFFFF9800), modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("更多拾味 · ${sortedTasting.size}篇", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage500)
+                            }
+                        }
+                    }
+                }
             }
         }
     }

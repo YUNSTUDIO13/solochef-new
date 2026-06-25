@@ -54,7 +54,7 @@ fun LibraryScreen(
     val filtered = remember(recipes, searchQuery, selectedTags, selectedEnergy) {
         recipes.filter { recipe ->
             val mSearch = searchQuery.isBlank() || recipe.name.contains(searchQuery, ignoreCase = true)
-            val mTags = selectedTags.isEmpty() || selectedTags.all { recipe.tags.contains(it) }
+            val mTags = selectedTags.isEmpty() || selectedTags.any { recipe.tags.contains(it) }
             val mEnergy = selectedEnergy.isEmpty() || selectedEnergy.contains(recipe.energy_level)
             mSearch && mTags && mEnergy
         }

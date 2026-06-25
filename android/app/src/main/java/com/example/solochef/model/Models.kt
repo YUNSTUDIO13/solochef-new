@@ -121,6 +121,18 @@ data class OrderBatch(
     val batch_notes: String? = null
 )
 
+// ─── 拾味手记 ──────────────────────────────────────
+
+@Serializable
+data class TastingNote(
+    val id: String = System.currentTimeMillis().toString(),
+    val coverImage: String = "",       // file path or empty
+    val url: String = "",              // 菜谱链接地址
+    val rating: Float = 0f,            // 拾味等级 0-5, 支持半星
+    val note: String = "",             // 备注
+    val createdAt: Long = System.currentTimeMillis()
+)
+
 // ─── Export/Import Payload ────────────────────────────
 
 @Serializable

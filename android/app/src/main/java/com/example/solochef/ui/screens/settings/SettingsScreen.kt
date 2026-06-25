@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
@@ -45,6 +46,7 @@ import kotlinx.coroutines.withContext
 fun SettingsScreen(
     onNavigateToLibrary: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
+    onNavigateToTasting: () -> Unit = {},
     onDataChanged: (() -> Unit)? = null,
     viewModel: SettingsViewModel = viewModel()
 ) {
@@ -143,6 +145,29 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(16.dp))
+
+        // ─── 拾味手记 ────────────────────────────
+        Surface(
+            onClick = onNavigateToTasting,
+            shape = RoundedCornerShape(32.dp),
+            color = Color.White,
+            border = BorderStroke(2.dp, Sage200),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFFFF3E0), modifier = Modifier.size(48.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Star, null, tint = Color(0xFFFF9800), modifier = Modifier.size(22.dp))
+                    }
+                }
+                Column(Modifier.padding(start = 16.dp)) {
+                    Text("拾味手记", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900)
+                    Text("拾藏心头百味，静待下厨之时", fontSize = 10.sp, color = Sage400, modifier = Modifier.padding(top = 2.dp))
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
     }
 }
 
@@ -231,6 +256,26 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                                 zos.closeEntry()
                             }
                         } catch (_: Exception) { /* skip if read fails */ }
+                        // Export tasting notes (拾味手记)
+                        try {
+                            val tastingNotes = storage.getTastingNotes()
+                            if (tastingNotes.isNotEmpty()) {
+                                // Rewrite cover paths to relative and include image files
+                                val exportNotes = tastingNotes.mapIndexed { ti, note ->
+                                    var coverRel = note.coverImage
+                                    val coverFile = java.io.File(note.coverImage)
+                                    if (coverFile.exists()) {
+                                        zos.putNextEntry(java.util.zip.ZipEntry("tasting_images/cover_$ti.jpg"))
+                                        zos.write(coverFile.readBytes()); zos.closeEntry()
+                                        coverRel = "./tasting_images/cover_$ti.jpg"
+                                    }
+                                    note.copy(coverImage = coverRel)
+                                }
+                                zos.putNextEntry(java.util.zip.ZipEntry("tasting_notes.json"))
+                                zos.write(exportJson.encodeToString(kotlinx.serialization.builtins.ListSerializer(com.example.solochef.model.TastingNote.serializer()), exportNotes).toByteArray(Charsets.UTF_8))
+                                zos.closeEntry()
+                            }
+                        } catch (_: Exception) { /* skip if read fails */ }
                     }
                 }
                 out.close()
@@ -257,6 +302,7 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                     val recipeEntries = mutableMapOf<String, String>() // prefix -> json content
                     val imageEntries = mutableMapOf<String, MutableMap<String, String>>() // prefix -> (relPath -> localPath)
                     var cookingRecordsJson: String? = null
+                    var tastingNotesJson: String? = null
                     var imgCounter = 0
 
                     java.util.zip.ZipInputStream(`in`).use { zis ->
@@ -267,6 +313,8 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                                 recipeEntries[""] = zis.bufferedReader().readText()
                             } else if (name == "cooking_records.json") {
                                 cookingRecordsJson = zis.bufferedReader().readText()
+                            } else if (name == "tasting_notes.json") {
+                                tastingNotesJson = zis.bufferedReader().readText()
                             } else if (name.endsWith("/recipe.json")) {
                                 val prefix = name.removeSuffix("recipe.json")
                                 recipeEntries[prefix] = zis.bufferedReader().readText()
@@ -277,6 +325,12 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                                 val t = java.io.File(importDir, "import_${imgCounter}_${name.substringAfterLast("/")}")
                                 t.outputStream().use { o -> var l: Int; while (zis.read(buf).also { l = it } > 0) o.write(buf, 0, l) }
                                 imageEntries.getOrPut(prefix) { mutableMapOf() }[relPath] = t.absolutePath
+                            } else if (name.startsWith("tasting_images/")) {
+                                imgCounter++
+                                val t = java.io.File(importDir, "import_${imgCounter}_${name.substringAfterLast("/")}")
+                                t.outputStream().use { o -> var l: Int; while (zis.read(buf).also { l = it } > 0) o.write(buf, 0, l) }
+                                // Store tasting images separately with relative path
+                                imageEntries.getOrPut("tasting/") { mutableMapOf() }[name] = t.absolutePath
                             }
                             zis.closeEntry(); e = zis.nextEntry
                         }
@@ -312,6 +366,23 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                                 storage.saveCookingRecords(mapped)
                                 _importResult.value = "导入成功：${count} 份菜谱 (+${mapped.size} 条烹饪记录)"
                             }
+                        } catch (_: Exception) { /* skip if parse fails */ }
+                    }
+                    // Restore tasting notes (拾味手记)
+                    if (tastingNotesJson != null) {
+                        try {
+                            val tastingNotes = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; isLenient = true }
+                                .decodeFromString<List<com.example.solochef.model.TastingNote>>(tastingNotesJson)
+                            val tastingImgMap = imageEntries["tasting/"] ?: emptyMap()
+                            val restored = tastingNotes.mapIndexed { _, tn ->
+                                // Remap image paths from zip
+                                val coverRel = tn.coverImage
+                                val coverLocal = tastingImgMap[coverRel.replace("./", "")]
+                                    ?: coverRel.let { if (it.startsWith("tasting_images/")) tastingImgMap[it] else null }
+                                    ?: coverRel
+                                tn.copy(coverImage = coverLocal)
+                            }
+                            storage.saveTastingNotes(restored)
                         } catch (_: Exception) { /* skip if parse fails */ }
                     }
                 }

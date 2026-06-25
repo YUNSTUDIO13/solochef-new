@@ -81,7 +81,7 @@ fun OrderEngineScreen(
         val list = mutableListOf<OrderCategory>()
         list.add(OrderCategory("all", "全部", recipes.size))
         val featuredCount = recipes.count { it.is_featured }
-        if (featuredCount > 0) list.add(OrderCategory("主推菜", "主推菜", featuredCount))
+        if (featuredCount > 0) list.add(OrderCategory("主厨力荐", "主厨力荐", featuredCount))
         (COOKING_PROCESS_TAGS + CUISINE_TAGS).forEach { tag ->
             val cnt = recipes.count { tag in it.tags }
             if (cnt > 0) list.add(OrderCategory(tag, tag, cnt))
@@ -91,7 +91,7 @@ fun OrderEngineScreen(
 
     val filtered = remember(recipes, activeCategory) {
         recipes.filter { r ->
-            when (activeCategory) { "all" -> true; "主推菜" -> r.is_featured; else -> r.tags.contains(activeCategory) }
+            when (activeCategory) { "all" -> true; "主厨力荐" -> r.is_featured; else -> r.tags.contains(activeCategory) }
         }.sortedBy { r ->
             if (activeCategory == "all") r.tags.mapNotNull { ALL_ORDER.indexOf(it) }.filter { it >= 0 }.minOrNull() ?: Int.MAX_VALUE else 0
         }

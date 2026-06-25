@@ -91,6 +91,7 @@ private data class ReceiptLine(
 fun FeedbackScreen(
     recipe: Recipe,
     batchRecipes: List<Recipe> = emptyList(),
+    receiptDate: Long? = null,
     onDone: () -> Unit
 ) {
     val sentence = remember { sentences.random() }
@@ -111,15 +112,19 @@ fun FeedbackScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     val receiptGraphicsLayer = rememberGraphicsLayer()
-    val tableNo = remember {
-        val prefs = context.getSharedPreferences("solochef_feedback", android.content.Context.MODE_PRIVATE)
-        val next = prefs.getInt("table_counter", 0) + 1
-        prefs.edit().putInt("table_counter", next).apply()
-        "%04d".format(next)
+    val tableNo = "0068"
+    val orderNo = remember {
+        val chars = "0123456789"
+        val sb = StringBuilder("SC")
+        repeat(10) { sb.append(chars.random()) }
+        sb.toString()
     }
-    val dateTime = remember {
-        val now = java.util.Date(System.currentTimeMillis())
-        java.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss", java.util.Locale.getDefault()).format(now)
+    val dateTime = remember(receiptDate) {
+        val now = System.currentTimeMillis()
+        val baseDate = receiptDate ?: now
+        val datePart = java.text.SimpleDateFormat("yyyy/MM/dd", java.util.Locale.getDefault()).format(java.util.Date(baseDate))
+        val timePart = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(now))
+        "$datePart $timePart"
     }
 
     val infiniteTransition = rememberInfiniteTransition()
@@ -149,40 +154,35 @@ fun FeedbackScreen(
                         drawContent()
                     },
                 RoundedCornerShape(0.dp),
-                color = Color(0xFFFAF9F4),
+                color = Color.White,
                 border = BorderStroke(1.dp, Color(0xFFD6D3D1).copy(0.4f)),
                 shadowElevation = 4.dp
             ) {
-                Column(Modifier.padding(24.dp).padding(vertical = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.padding(16.dp).padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     // Header
-                    Text("solochef", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color(0xFF1C1917))
-                    Text("独厨（蓝星旗舰店）", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF78716C))
-                    Spacer(Modifier.height(16.dp))
+                    Text("独厨SoloChef", fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color(0xFF1C1917))
+                    Text("人生不将就，从我的精品厨房开始", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF78716C))
+                    Spacer(Modifier.height(10.dp))
                     HorizontalDivider(color = Color(0xFFD6D3D1))
-                    Spacer(Modifier.height(20.dp))
-
-                    // Dine-in badge
-                    Surface(Modifier, RoundedCornerShape(2.dp), Color.Transparent, border = BorderStroke(1.dp, Color(0xFF1C1917))) {
-                        Text("堂食", Modifier.padding(horizontal = 28.dp, vertical = 4.dp), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp, color = Color(0xFF1C1917))
-                    }
-                    Spacer(Modifier.height(20.dp))
-                    HorizontalDivider(color = Color(0xFFD6D3D1))
-                    Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(10.dp))
 
                     // Table
-                    Text("#$tableNo", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Color(0xFF0C0A09))
-                    Text("桌号", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color(0xFFA8A29E))
-                    Spacer(Modifier.height(20.dp))
-                    HorizontalDivider(color = Color(0xFFD6D3D1))
-                    Spacer(Modifier.height(16.dp))
+                    Text("#$tableNo", fontSize = 32.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Color(0xFF0C0A09))
+                    Text("桌号", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color(0xFFA8A29E))
+                    Spacer(Modifier.height(10.dp))
 
-                    // Delivery note
-                    Text("Delivery note:", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color(0xFFA8A29E), modifier = Modifier.fillMaxWidth())
-                    Text("DELIVERY $dateTime", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF292524))
-                    Text("OMS 3423423023230", fontSize = 12.sp, color = Color(0xFF78716C))
-                    Spacer(Modifier.height(16.dp))
+                    // Delivery & Order info — label left, value right
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("小票日期", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF78716C))
+                        Text(dateTime, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF292524))
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("订单号", fontSize = 10.sp, color = Color(0xFF78716C))
+                        Text(orderNo, fontSize = 10.sp, color = Color(0xFF292524))
+                    }
+                    Spacer(Modifier.height(8.dp))
                     HorizontalDivider(color = Color(0xFFD6D3D1))
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(8.dp))
 
                     // Order table header
                     Row(Modifier.fillMaxWidth()) {
@@ -201,34 +201,24 @@ fun FeedbackScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(8.dp))
                     HorizontalDivider(color = Color(0xFFD6D3D1).copy(0.8f))
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(8.dp))
 
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("餐点总价", fontSize = 12.sp, color = Color(0xFF78716C)); Text("%.2f".format(grandTotal), fontSize = 12.sp, color = Color(0xFF78716C)) }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("配售税 (0.0%)", fontSize = 12.sp, color = Color(0xFF78716C)); Text("0.00", fontSize = 12.sp, color = Color(0xFF78716C)) }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("环保打包费", fontSize = 12.sp, color = Color(0xFF78716C)); Text("0.00", fontSize = 12.sp, color = Color(0xFF78716C)) }
-                    Spacer(Modifier.height(16.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("餐点总价", fontSize = 10.sp, color = Color(0xFF78716C)); Text("%.2f".format(grandTotal), fontSize = 10.sp, color = Color(0xFF78716C)) }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("环保打包费", fontSize = 10.sp, color = Color(0xFF78716C)); Text("0.00", fontSize = 10.sp, color = Color(0xFF78716C)) }
+                    Spacer(Modifier.height(8.dp))
                     HorizontalDivider(color = Color(0xFFD6D3D1))
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(8.dp))
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("顾客实付", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1917))
-                        Text("¥%.2f".format(grandTotal), fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFF0C0A09))
+                        Text("顾客实付", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1917))
+                        Text("¥%.2f".format(grandTotal), fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFF0C0A09))
                     }
-                    Spacer(Modifier.height(24.dp))
-                    HorizontalDivider(color = Color(0xFFD6D3D1))
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(12.dp))
 
-                    // Chef's memo
-                    Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Favorite, contentDescription = null, tint = Color(0xFFF87171), modifier = Modifier.size(10.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("chef's memo / 温馨寄语", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color(0xFF57534E), modifier = Modifier.graphicsLayer(alpha = 0.4f))
-                    }
-                    Text("\"$sentence\"", Modifier.padding(horizontal = 16.dp, vertical = 12.dp), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF292524), textAlign = TextAlign.Center, lineHeight = 24.sp)
-                    Text("✦ THANK YOU FOR DINING WITH US ✦", fontSize = 9.sp, letterSpacing = 2.sp, color = Color(0xFFA8A29E))
-                    Text("Made in solochef smart kitchen ecosystem", fontSize = 8.sp, letterSpacing = 2.sp, color = Color(0xFFD6D3D1), modifier = Modifier.padding(top = 4.dp))
+                    // Random sentence only
+                    Text("\"$sentence\"", Modifier.padding(horizontal = 12.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF292524), textAlign = TextAlign.Center, lineHeight = 16.sp)
                 }
             }
         }

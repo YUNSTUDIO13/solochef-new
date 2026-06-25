@@ -37,6 +37,12 @@ import com.example.solochef.ui.screens.analytics.WokHeatRankingScreen
 import com.example.solochef.ui.screens.batchdetail.BatchDetailScreen
 import com.example.solochef.ui.screens.createrecipe.CreateRecipeScreen
 import com.example.solochef.ui.screens.dashboard.DashboardScreen
+import com.example.solochef.ui.screens.dashboard.FeaturedAllScreen
+import com.example.solochef.ui.screens.dashboard.DashboardScreen
+import com.example.solochef.ui.screens.dashboard.FeaturedAllScreen
+import com.example.solochef.ui.screens.tasting.CreateTastingScreen
+import com.example.solochef.ui.screens.tasting.TastingNotesListScreen
+import com.example.solochef.ui.screens.tasting.TastingDetailScreen
 import com.example.solochef.ui.screens.execution.ExecutionScreen
 import com.example.solochef.ui.screens.feedback.FeedbackScreen
 import com.example.solochef.ui.screens.library.LibraryScreen
@@ -51,7 +57,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     data object Dashboard : Screen("dashboard", "首页", Icons.Default.Dashboard)
     data object Library : Screen("library", "菜谱", Icons.Default.Search)
     data object Analytics : Screen("analytics", "数据", Icons.Default.BarChart)
-    data object Settings : Screen("settings", "设置", Icons.Default.Settings)
+    data object Settings : Screen("settings", "我的", Icons.Default.Settings)
     data object RecipeDetail : Screen("recipe_detail/{recipeId}", "详情", Icons.Default.Info)
     data object CreateRecipe : Screen("create_recipe?editId={editId}", "新建", Icons.Default.Add)
     data object OrderEngine : Screen("order_engine", "点单", Icons.Default.ShoppingCart)
@@ -60,6 +66,10 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     data object Feedback : Screen("feedback/{recipeId}", "完成", Icons.Default.CheckCircle)
     data object BatchDetail : Screen("batch_detail", "批次", Icons.Default.ListAlt)
     data object WokHeatRanking : Screen("wok_heat_ranking", "锅气榜", Icons.Default.Whatshot)
+    data object FeaturedAll : Screen("featured_all", "主厨力荐", Icons.Default.AutoAwesome)
+    data object CreateTasting : Screen("create_tasting?editId={editId}", "拾味手记", Icons.Default.Star)
+    data object TastingAll : Screen("tasting_all", "拾味手记", Icons.Default.Star)
+    data object TastingDetail : Screen("tasting_detail/{tastingId}", "拾味手记", Icons.Default.Star)
 }
 
 class MainActivity : ComponentActivity() {
@@ -82,15 +92,18 @@ fun SoloChefApp() {
     // Shared app state — loaded once, refreshed on save/delete
     var recipes by remember { mutableStateOf<List<Recipe>>(emptyList()) }
     var cookingRecords by remember { mutableStateOf<List<CookingRecord>>(emptyList()) }
+    var tastingNotes by remember { mutableStateOf<List<TastingNote>>(emptyList()) }
     var stats by remember { mutableStateOf(UserStats()) }
     var activeBatch by remember { mutableStateOf<OrderBatch?>(null) }
     var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
     var feedbackBatchRecipes by remember { mutableStateOf<List<Recipe>>(emptyList()) }
+    var feedbackReceiptDate by remember { mutableStateOf<Long?>(null) }
     var analyticsKey by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
         recipes = storage.getAllRecipes()
         cookingRecords = storage.getCookingRecords()
+        tastingNotes = storage.getTastingNotes()
         stats = storage.getStats()
         activeBatch = storage.getActiveBatch()
     }
@@ -181,9 +194,13 @@ fun SoloChefApp() {
             composable(Screen.Dashboard.route) {
                 DashboardScreen(
                     activeBatchOverride = activeBatch,
+                    tastingNotes = tastingNotes,
                     onPlaceOrder = { navController.navigate(Screen.OrderEngine.route) },
                     onOpenBatch = { navController.navigate(Screen.BatchDetail.route) },
                     onSelectRecipe = { r -> selectedRecipe = r; navController.navigate("recipe_detail/${r.id}") },
+                    onViewAllFeatured = { navController.navigate(Screen.FeaturedAll.route) },
+                    onViewAllTasting = { navController.navigate(Screen.TastingAll.route) },
+                    onSelectTasting = { id -> navController.navigate("tasting_detail/$id") },
                     onRandomOrder = { id ->
                         scope.launch {
                             val b = OrderBatch(id = System.currentTimeMillis().toString(), status = BatchStatus.Picking, recipeIds = listOf(id), completedRecipeIds = emptyList(), created_at = System.currentTimeMillis().toString())
@@ -269,15 +286,16 @@ fun SoloChefApp() {
                                             recipes = recipes.map { if (it.id == u.id) u else it }
                                         }
                                     }
-                                    // Save cooking records (no distinct — ×2 qty records twice for calendar)
+                                    // Save cooking records — use back-fill date if set in batch_notes
                                     val now = System.currentTimeMillis()
+                                    val cookedAt = batch.batch_notes?.toLongOrNull() ?: now
                                     batch.recipeIds.forEach { rid ->
                                         recipes.find { it.id == rid }?.let { r ->
                                             storage.saveCookingRecord(CookingRecord(
                                                 recipeId = r.id,
                                                 recipeName = r.name,
                                                 coverImage = r.cover_image,
-                                                cookedAt = now,
+                                                cookedAt = cookedAt,
                                                 tags = r.tags,
                                                 durationMins = r.timeline.sumOf { it.duration } / 60
                                             ))
@@ -287,6 +305,7 @@ fun SoloChefApp() {
                                     stats = stats.ignite().also { storage.saveStats(it) }
                                     // Capture batch recipe objects for thermal receipt
                                     feedbackBatchRecipes = batch.recipeIds.mapNotNull { rid -> recipes.find { it.id == rid } }
+                                    feedbackReceiptDate = cookedAt
                                     // Navigate FIRST, then clear batch
                                     val firstRid = batch.recipeIds.firstOrNull()
                                     if (firstRid != null) {
@@ -333,18 +352,20 @@ fun SoloChefApp() {
                         scope.launch {
                             val u = r.copy(last_cooked_at = System.currentTimeMillis().toString(), cooked_count = r.cooked_count + 1)
                             storage.saveRecipe(u); recipes = recipes.map { if (it.id == u.id) u else it }
-                            // Save cooking record for calendar
+                            // Use back-fill date from batch_notes if available
+                            val cookedAt = activeBatch?.batch_notes?.toLongOrNull() ?: System.currentTimeMillis()
                             storage.saveCookingRecord(CookingRecord(
                                 recipeId = r.id,
                                 recipeName = r.name,
                                 coverImage = r.cover_image,
-                                cookedAt = System.currentTimeMillis(),
+                                cookedAt = cookedAt,
                                 tags = r.tags,
                                 durationMins = r.timeline.sumOf { it.duration } / 60
                             ))
                             cookingRecords = storage.getCookingRecords()
+                            feedbackBatchRecipes = emptyList()
+                            feedbackReceiptDate = cookedAt
                         }
-                        feedbackBatchRecipes = emptyList()
                         navController.navigate("feedback/${recipe.id}") { popUpTo(Screen.Execution.route) { inclusive = true } }
                     })
                 }
@@ -353,7 +374,7 @@ fun SoloChefApp() {
             composable(Screen.Feedback.route, arguments = listOf(navArgument("recipeId") { type = NavType.StringType })) { entry ->
                 val rid = entry.arguments?.getString("recipeId") ?: ""
                 recipes.find { it.id == rid }?.let { recipe ->
-                    FeedbackScreen(recipe = recipe, batchRecipes = feedbackBatchRecipes, onDone = {
+                    FeedbackScreen(recipe = recipe, batchRecipes = feedbackBatchRecipes, receiptDate = feedbackReceiptDate ?: activeBatch?.batch_notes?.toLongOrNull(), onDone = {
                         scope.launch { stats = stats.ignite().also { storage.saveStats(it) } }
                         navController.navigate(Screen.Dashboard.route) { popUpTo(Screen.Dashboard.route) { inclusive = true } }
                     })
@@ -366,12 +387,84 @@ fun SoloChefApp() {
                     cookingRecords = cookingRecords,
                     onNavigateToLibrary = { navController.navigate(Screen.Library.route) },
                     onViewAllRanking = { navController.navigate(Screen.WokHeatRanking.route) },
-                    onSelectRecipe = { r -> selectedRecipe = r; navController.navigate("recipe_detail/${r.id}") }
+                    onSelectRecipe = { r -> selectedRecipe = r; navController.navigate("recipe_detail/${r.id}") },
+                    onShareReceipt = { dayRecipes ->
+                        feedbackBatchRecipes = dayRecipes
+                        feedbackReceiptDate = null
+                        if (dayRecipes.isNotEmpty()) {
+                            navController.navigate("feedback/${dayRecipes.first().id}")
+                        }
+                    },
+                    onDeleteRecord = { recordId ->
+                        scope.launch {
+                            storage.deleteCookingRecord(recordId)
+                            cookingRecords = storage.getCookingRecords()
+                            analyticsKey++
+                        }
+                    },
+                    onCreateRecord = { targetDateMs ->
+                        scope.launch {
+                            val batchId = System.currentTimeMillis().toString()
+                            val batch = OrderBatch(
+                                id = batchId,
+                                status = BatchStatus.Picking,
+                                recipeIds = emptyList(),
+                                completedRecipeIds = emptyList(),
+                                created_at = System.currentTimeMillis().toString(),
+                                batch_notes = targetDateMs.toString()
+                            )
+                            storage.saveActiveBatch(batch)
+                            activeBatch = batch
+                            navController.navigate(Screen.OrderEngine.route)
+                        }
+                    }
                 )
             } }
 
             composable(Screen.WokHeatRanking.route) {
                 WokHeatRankingScreen(recipes = recipes, onBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.FeaturedAll.route) {
+                FeaturedAllScreen(recipes = recipes, onBack = { navController.popBackStack() }, onSelectRecipe = { r -> selectedRecipe = r; navController.navigate("recipe_detail/${r.id}") })
+            }
+
+            composable(Screen.TastingAll.route) {
+                TastingNotesListScreen(tastingNotes = tastingNotes, onBack = { navController.popBackStack() }, onSelectTasting = { id -> navController.navigate("tasting_detail/$id") })
+            }
+
+            composable(Screen.CreateTasting.route) { backStackEntry ->
+                val editId = backStackEntry.arguments?.getString("editId")
+                CreateTastingScreen(
+                    existingNote = tastingNotes.find { it.id == editId },
+                    onBack = { navController.popBackStack() },
+                    onSaved = {
+                        scope.launch { tastingNotes = storage.getTastingNotes() }
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(Screen.TastingDetail.route) { backStackEntry ->
+                val tastingId = backStackEntry.arguments?.getString("tastingId") ?: ""
+                val note = tastingNotes.find { it.id == tastingId }
+                if (note != null) {
+                    TastingDetailScreen(
+                        note = note,
+                        onBack = { navController.popBackStack() },
+                        onDelete = {
+                            scope.launch {
+                                storage.deleteTastingNote(tastingId)
+                                tastingNotes = storage.getTastingNotes()
+                            }
+                            navController.popBackStack()
+                        },
+                        onTurnToRecipe = { rid ->
+                            scope.launch { tastingNotes = storage.getTastingNotes() }
+                            navController.navigate("create_recipe?editId=$rid") { popUpTo(Screen.TastingDetail.route) { inclusive = true } }
+                        }
+                    )
+                }
             }
 
             composable(Screen.Settings.route) {
@@ -382,8 +475,10 @@ fun SoloChefApp() {
                         scope.launch {
                             recipes = storage.getAllRecipes()
                             cookingRecords = storage.getCookingRecords()
+                            tastingNotes = storage.getTastingNotes()
                         }
-                    }
+                    },
+                    onNavigateToTasting = { navController.navigate("create_tasting?editId=${System.currentTimeMillis()}") }
                 )
             }
         }

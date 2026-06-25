@@ -125,6 +125,12 @@ class LocalFileManager(private val context: Context) {
         File(dataDir, "_cooking_records.json").writeText(json.encodeToString(records))
     }
 
+    suspend fun deleteCookingRecord(id: String) = withContext(Dispatchers.IO) {
+        val records = getCookingRecordsInternal().toMutableList()
+        records.removeAll { it.id == id }
+        File(dataDir, "_cooking_records.json").writeText(json.encodeToString(records))
+    }
+
     suspend fun getCookingRecords(): List<CookingRecord> = withContext(Dispatchers.IO) {
         getCookingRecordsInternal()
     }
@@ -141,6 +147,42 @@ class LocalFileManager(private val context: Context) {
         val file = File(dataDir, "_cooking_records.json")
         return if (file.exists()) {
             try { json.decodeFromString<List<CookingRecord>>(file.readText()) }
+            catch (_: Exception) { emptyList() }
+        } else emptyList()
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  Tasting Notes (拾味手记)
+    // ═══════════════════════════════════════════════════
+
+    suspend fun getTastingNotes(): List<TastingNote> = withContext(Dispatchers.IO) {
+        val file = File(dataDir, "_tasting_notes.json")
+        if (file.exists()) {
+            try { json.decodeFromString<List<TastingNote>>(file.readText()) }
+            catch (_: Exception) { emptyList() }
+        } else emptyList()
+    }
+
+    suspend fun saveTastingNote(note: TastingNote) = withContext(Dispatchers.IO) {
+        val notes = getTastingNotesInternal().toMutableList()
+        notes.add(note)
+        File(dataDir, "_tasting_notes.json").writeText(json.encodeToString(notes))
+    }
+
+    suspend fun saveTastingNotes(notes: List<TastingNote>) = withContext(Dispatchers.IO) {
+        File(dataDir, "_tasting_notes.json").writeText(json.encodeToString(notes))
+    }
+
+    suspend fun deleteTastingNote(id: String) = withContext(Dispatchers.IO) {
+        val notes = getTastingNotesInternal().toMutableList()
+        notes.removeAll { it.id == id }
+        File(dataDir, "_tasting_notes.json").writeText(json.encodeToString(notes))
+    }
+
+    private fun getTastingNotesInternal(): List<TastingNote> {
+        val file = File(dataDir, "_tasting_notes.json")
+        return if (file.exists()) {
+            try { json.decodeFromString<List<TastingNote>>(file.readText()) }
             catch (_: Exception) { emptyList() }
         } else emptyList()
     }

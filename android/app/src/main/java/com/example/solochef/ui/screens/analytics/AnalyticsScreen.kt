@@ -28,7 +28,10 @@ fun AnalyticsScreen(
     cookingRecords: List<CookingRecord>,
     onNavigateToLibrary: () -> Unit,
     onViewAllRanking: () -> Unit,
-    onSelectRecipe: (Recipe) -> Unit
+    onSelectRecipe: (Recipe) -> Unit,
+    onShareReceipt: ((List<Recipe>) -> Unit)? = null,
+    onDeleteRecord: ((String) -> Unit)? = null,
+    onCreateRecord: ((Long) -> Unit)? = null
 ) {
     // 锅气榜：按cooked_count降序，取前10
     val topWokHeats = remember(recipes) {
@@ -37,7 +40,7 @@ fun AnalyticsScreen(
             .take(10)
     }
 
-    Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(24.dp)) {
+    Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 100.dp)) {
         Text("食光日历", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
         Text("时间长河里的烟火气", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 8.dp))
         Spacer(Modifier.height(24.dp))
@@ -48,7 +51,10 @@ fun AnalyticsScreen(
                 FoodCalendar(
                     records = cookingRecords,
                     recipes = recipes,
-                    onSelectRecipe = onSelectRecipe
+                    onSelectRecipe = onSelectRecipe,
+                    onShareReceipt = onShareReceipt,
+                    onDeleteRecord = onDeleteRecord,
+                    onCreateRecord = onCreateRecord
                 )
             }
         }
