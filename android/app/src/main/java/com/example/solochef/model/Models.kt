@@ -1,5 +1,6 @@
 package com.example.solochef.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
 // ─── Enums ────────────────────────────────────────────
@@ -16,12 +17,14 @@ enum class BatchStatus { Picking, Processing, Finished }
 
 // ─── Core Data Classes ────────────────────────────────
 
+@Immutable
 @Serializable
 data class SubTask(
     val content: String = "",
     val duration: Int = 60  // seconds
 )
 
+@Immutable
 @Serializable
 data class TimelineStep(
     val step_id: Long = System.currentTimeMillis(),
@@ -33,6 +36,7 @@ data class TimelineStep(
     val images: List<String> = emptyList()  // base64 or file paths
 )
 
+@Immutable
 @Serializable
 data class Material(
     val item: String = "",
@@ -42,6 +46,7 @@ data class Material(
     val image: String? = null
 )
 
+@Immutable
 @Serializable
 data class Recipe(
     val id: String = System.currentTimeMillis().toString(),
@@ -64,6 +69,7 @@ data class Recipe(
     val updated_at: String? = null
 )
 
+@Immutable
 @Serializable
 data class UserStats(
     val streak: Int = 0,
@@ -84,6 +90,7 @@ data class UserStats(
     }
 }
 
+@Immutable
 @Serializable
 data class CookingRecord(
     val id: String = System.currentTimeMillis().toString(),
@@ -95,6 +102,7 @@ data class CookingRecord(
     val durationMins: Int = 0
 )
 
+@Immutable
 @Serializable
 data class CookingHistoryEntry(
     val id: String = System.currentTimeMillis().toString(),
@@ -109,6 +117,7 @@ data class CookingHistoryEntry(
     val materials: Map<String, List<Material>>? = null
 )
 
+@Immutable
 @Serializable
 data class OrderBatch(
     val id: String = System.currentTimeMillis().toString(),
@@ -123,6 +132,7 @@ data class OrderBatch(
 
 // ─── 拾味手记 ──────────────────────────────────────
 
+@Immutable
 @Serializable
 data class TastingNote(
     val id: String = System.currentTimeMillis().toString(),
@@ -135,11 +145,13 @@ data class TastingNote(
 
 // ─── Export/Import Payload ────────────────────────────
 
+@Immutable
 @Serializable
 data class BackupPayload(
     val recipes: List<Recipe>,
     val history: List<CookingHistoryEntry>,
     val stats: UserStats,
     val version: String = "1.0",
-    val exportedAt: String
+    val exportedAt: String,
+    val ingredient_library: IngredientLibrary? = null
 )

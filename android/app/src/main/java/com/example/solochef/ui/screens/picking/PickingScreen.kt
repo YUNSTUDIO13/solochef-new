@@ -21,7 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.solochef.model.Recipe
+import com.example.solochef.model.IngredientLibrary
+import com.example.solochef.storage.LocalFileManager
 import com.example.solochef.ui.theme.*
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun PickingScreen(
@@ -31,6 +34,9 @@ fun PickingScreen(
 ) {
     val allMaterials = recipe.materials.values.flatten()
     var checkedKeys by remember { mutableStateOf(setOf<String>()) }
+    val context = LocalContext.current
+    var ingLib by remember { mutableStateOf<IngredientLibrary?>(null) }
+    LaunchedEffect(Unit) { ingLib = LocalFileManager(context).getIngredientLibrary() }
 
     val allKeys = remember(recipe) {
         val keys = mutableListOf<String>()
@@ -82,11 +88,11 @@ fun PickingScreen(
             recipe.materials.forEach { (cat, items) ->
                 if (items.isEmpty()) return@forEach
                 val label = when (cat) { "meat" -> "肉禽 / 水产"; "vegetable" -> "蔬菜 / 水果"; else -> "调料 / 干货" }
-                val icon = when (cat) { "meat" -> Icons.Default.SetMeal; "vegetable" -> Icons.Default.Eco; else -> Icons.Default.Opacity }
+                val icon = when (cat) { "meat" -> "🍖"; "vegetable" -> "🥬"; else -> "🧂" }
 
                 Column {
                     Row(Modifier.padding(horizontal = 4.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(icon, contentDescription = null, tint = Sage500, modifier = Modifier.size(14.dp))
+                        Text(icon, fontSize = 14.sp)
                         Spacer(Modifier.width(8.dp))
                         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
                     }
@@ -107,7 +113,7 @@ fun PickingScreen(
                                             if (isChecked) Icon(Icons.Default.Check, contentDescription = null, tint = Sage800, modifier = Modifier.size(11.dp))
                                         }
                                         Spacer(Modifier.width(6.dp))
-                                        Text("🥬", fontSize = 14.sp)
+                                        Text(ingLib?.emojiFor(m.item) ?: "🥬", fontSize = 14.sp)
                                         Spacer(Modifier.width(6.dp))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(m.item, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Black, lineHeight = 13.sp), color = if (isChecked) Color.White else Sage900, maxLines = 2, overflow = TextOverflow.Ellipsis)

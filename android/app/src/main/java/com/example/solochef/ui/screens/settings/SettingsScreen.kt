@@ -47,6 +47,7 @@ fun SettingsScreen(
     onNavigateToLibrary: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToTasting: () -> Unit = {},
+    onNavigateToIngredients: () -> Unit = {},
     onDataChanged: (() -> Unit)? = null,
     viewModel: SettingsViewModel = viewModel()
 ) {
@@ -140,6 +141,29 @@ fun SettingsScreen(
                 Column(Modifier.padding(start = 16.dp)) {
                     Text("导入菜谱 (Zip)", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900)
                     Text("解压图片至本地沙箱", fontSize = 10.sp, color = Sage400, modifier = Modifier.padding(top = 2.dp))
+                }
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        // ─── 食材库 ────────────────────────────
+        Surface(
+            onClick = onNavigateToIngredients,
+            shape = RoundedCornerShape(32.dp),
+            color = Color.White,
+            border = BorderStroke(2.dp, Sage200),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFE8F5E9), modifier = Modifier.size(36.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Star, null, tint = Color(0xFF2D4A3A), modifier = Modifier.size(22.dp))
+                    }
+                }
+                Column(Modifier.padding(start = 16.dp)) {
+                    Text("食材库", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900)
+                    Text("统一食材名称，规范物料录入", fontSize = 10.sp, color = Sage400, modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }
@@ -276,6 +300,13 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                                 zos.closeEntry()
                             }
                         } catch (_: Exception) { /* skip if read fails */ }
+                        // Export ingredient library
+                        try {
+                            val ingLib = storage.getIngredientLibrary()
+                            zos.putNextEntry(java.util.zip.ZipEntry("ingredient_library.json"))
+                            zos.write(exportJson.encodeToString(com.example.solochef.model.IngredientLibrary.serializer(), ingLib).toByteArray(Charsets.UTF_8))
+                            zos.closeEntry()
+                        } catch (_: Exception) { /* skip */ }
                     }
                 }
                 out.close()
@@ -303,6 +334,7 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                     val imageEntries = mutableMapOf<String, MutableMap<String, String>>() // prefix -> (relPath -> localPath)
                     var cookingRecordsJson: String? = null
                     var tastingNotesJson: String? = null
+                    var ingredientLibJson: String? = null
                     var imgCounter = 0
 
                     java.util.zip.ZipInputStream(`in`).use { zis ->
@@ -315,6 +347,8 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                                 cookingRecordsJson = zis.bufferedReader().readText()
                             } else if (name == "tasting_notes.json") {
                                 tastingNotesJson = zis.bufferedReader().readText()
+                            } else if (name == "ingredient_library.json") {
+                                ingredientLibJson = zis.bufferedReader().readText()
                             } else if (name.endsWith("/recipe.json")) {
                                 val prefix = name.removeSuffix("recipe.json")
                                 recipeEntries[prefix] = zis.bufferedReader().readText()
@@ -383,6 +417,40 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                                 tn.copy(coverImage = coverLocal)
                             }
                             storage.saveTastingNotes(restored)
+                        } catch (_: Exception) { /* skip if parse fails */ }
+                    }
+                    // Restore ingredient library
+                    if (ingredientLibJson != null) {
+                        try {
+                            val imported = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; isLenient = true }
+                                .decodeFromString<com.example.solochef.model.IngredientLibrary>(ingredientLibJson)
+                            val current = storage.getIngredientLibrary()
+                            val existingById = current.categories.associate { cat -> cat.id to cat.ingredients.map { it.name }.toSet() }
+                            var merged = current
+                            imported.categories.forEach { impCat ->
+                                val target = merged.categories.find { it.id == impCat.id }
+                                if (target != null) {
+                                    val existingNames = existingById[impCat.id] ?: emptySet()
+                                    val newItems = if (impCat.id == "favorites") {
+                                        impCat.ingredients.filter { it.name !in existingNames }
+                                    } else {
+                                        impCat.ingredients.filter { it.name !in existingNames && !it.isStandard }
+                                    }
+                                    if (newItems.isNotEmpty()) {
+                                        val idx = merged.categories.indexOf(target)
+                                        val updated = target.copy(ingredients = target.ingredients + newItems)
+                                        merged = merged.copy(categories = merged.categories.toMutableList().also { it[idx] = updated })
+                                    }
+                                } else {
+                                    merged = merged.copy(categories = merged.categories + impCat)
+                                }
+                            }
+                            // Ensure favorites always at top
+                            val favIdx = merged.categories.indexOfFirst { it.id == "favorites" }
+                            if (favIdx > 0) {
+                                merged = merged.copy(categories = listOf(merged.categories[favIdx]) + merged.categories.filterIndexed { i, _ -> i != favIdx })
+                            }
+                            if (merged != current) storage.saveIngredientLibrary(merged)
                         } catch (_: Exception) { /* skip if parse fails */ }
                     }
                 }

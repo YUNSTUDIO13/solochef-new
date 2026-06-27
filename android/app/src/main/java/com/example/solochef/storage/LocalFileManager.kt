@@ -21,9 +21,9 @@ class LocalFileManager(private val context: Context) {
 
     private val json = Json {
         ignoreUnknownKeys = true
-        prettyPrint = true
+        prettyPrint = false
         isLenient = true
-        encodeDefaults = true
+        encodeDefaults = false
     }
 
     private val recipesDir: File
@@ -304,7 +304,8 @@ class LocalFileManager(private val context: Context) {
             recipes = recipes,
             history = history,
             stats = stats,
-            exportedAt = System.currentTimeMillis().toString()
+            exportedAt = System.currentTimeMillis().toString(),
+            ingredient_library = getIngredientLibrary()
         )
         sb.appendLine()
         sb.appendLine("$PAYLOAD_START")
@@ -360,6 +361,39 @@ class LocalFileManager(private val context: Context) {
         if (payload.stats.streak >= currentStats.streak) {
             saveStats(payload.stats)
         }
+        // Merge ingredient library
+        payload.ingredient_library?.let { imported ->
+            val current = getIngredientLibrary()
+            val existingNamesById = current.categories.associate { cat ->
+                cat.id to cat.ingredients.map { it.name }.toSet()
+            }
+            var merged = current
+            imported.categories.forEach { impCat ->
+                val target = merged.categories.find { it.id == impCat.id }
+                if (target != null) {
+                    val existingNames = existingNamesById[impCat.id] ?: emptySet()
+                    // 常用食材: merge all items; other categories: only merge non-standard (custom) items
+                    val newItems = if (impCat.id == "favorites") {
+                        impCat.ingredients.filter { it.name !in existingNames }
+                    } else {
+                        impCat.ingredients.filter { it.name !in existingNames && !it.isStandard }
+                    }
+                    if (newItems.isNotEmpty()) {
+                        val idx = merged.categories.indexOf(target)
+                        val updated = target.copy(ingredients = target.ingredients + newItems)
+                        merged = merged.copy(categories = merged.categories.toMutableList().also { it[idx] = updated })
+                    }
+                } else {
+                    merged = merged.copy(categories = merged.categories + impCat)
+                }
+            }
+            // Ensure favorites always at top
+            val favIdx = merged.categories.indexOfFirst { it.id == "favorites" }
+            if (favIdx > 0) {
+                merged = merged.copy(categories = listOf(merged.categories[favIdx]) + merged.categories.filterIndexed { i, _ -> i != favIdx })
+            }
+            if (merged != current) saveIngredientLibrary(merged)
+        }
         count
     }
 
@@ -376,6 +410,24 @@ class LocalFileManager(private val context: Context) {
 
     suspend fun saveLibraryName(name: String) = withContext(Dispatchers.IO) {
         File(dataDir, "_library_name.json").writeText(json.encodeToString(name))
+    }
+
+    // ─── Ingredient Library ────────────────────────────
+
+    suspend fun getIngredientLibrary(): IngredientLibrary = withContext(Dispatchers.IO) {
+        val f = File(dataDir, "_ingredient_library.json")
+        if (f.exists()) {
+            try { json.decodeFromString<IngredientLibrary>(f.readText()) }
+            catch (_: Exception) { DefaultIngredients.load() }
+        } else {
+            val lib = DefaultIngredients.load()
+            f.writeText(json.encodeToString(lib))
+            lib
+        }
+    }
+
+    suspend fun saveIngredientLibrary(lib: IngredientLibrary) = withContext(Dispatchers.IO) {
+        File(dataDir, "_ingredient_library.json").writeText(json.encodeToString(lib))
     }
 
     // ─── Helpers ───────────────────────────────────────

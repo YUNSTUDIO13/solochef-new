@@ -26,7 +26,10 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.solochef.model.MaterialCategory
 import com.example.solochef.model.Recipe
+import com.example.solochef.model.IngredientLibrary
+import com.example.solochef.storage.LocalFileManager
 import com.example.solochef.ui.theme.*
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun RecipeDetailScreen(
@@ -37,6 +40,11 @@ fun RecipeDetailScreen(
     onEdit: (Recipe) -> Unit
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var ingLib by remember { mutableStateOf<IngredientLibrary?>(null) }
+    LaunchedEffect(Unit) {
+        ingLib = LocalFileManager(context).getIngredientLibrary()
+    }
 
     Box(Modifier.fillMaxSize().background(Sage50)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -100,18 +108,19 @@ fun RecipeDetailScreen(
                     val items = recipe.materials[cat.name.lowercase()] ?: emptyList()
                     if (items.isEmpty()) return@forEach
                     val label = cat.label
-                    val icon = when (cat) { MaterialCategory.Meat -> Icons.Default.SetMeal; MaterialCategory.Vegetable -> Icons.Default.Eco; MaterialCategory.Seasoning -> Icons.Default.Opacity }
+                    val icon = when (cat) { MaterialCategory.Meat -> "🍖"; MaterialCategory.Vegetable -> "🥬"; MaterialCategory.Seasoning -> "🧂" }
                     Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(icon, contentDescription = null, tint = Sage400, modifier = Modifier.size(14.dp))
-                        Spacer(Modifier.width(8.dp))
+                        Text(icon, fontSize = 14.sp)
+                        Spacer(Modifier.width(4.dp))
                         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
                     }
                     items.chunked(2).forEach { row ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             row.forEach { m ->
+                                val matEmoji = ingLib?.emojiFor(m.item) ?: "🥬"
                                 Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
                                     Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Text("🥬", fontSize = 16.sp)
+                                        Text(matEmoji, fontSize = 16.sp)
                                         Spacer(Modifier.width(8.dp))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(

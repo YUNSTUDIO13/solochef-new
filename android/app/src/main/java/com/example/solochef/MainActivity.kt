@@ -50,6 +50,7 @@ import com.example.solochef.ui.screens.orderengine.OrderEngineScreen
 import com.example.solochef.ui.screens.picking.PickingScreen
 import com.example.solochef.ui.screens.recipedetail.RecipeDetailScreen
 import com.example.solochef.ui.screens.settings.SettingsScreen
+import com.example.solochef.ui.screens.ingredients.IngredientLibraryScreen
 import com.example.solochef.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -70,6 +71,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     data object CreateTasting : Screen("create_tasting?editId={editId}", "拾味手记", Icons.Default.Star)
     data object TastingAll : Screen("tasting_all", "拾味手记", Icons.Default.Star)
     data object TastingDetail : Screen("tasting_detail/{tastingId}", "拾味手记", Icons.Default.Star)
+    data object IngredientLibrary : Screen("ingredient_library", "食材库", Icons.Default.Whatshot)
 }
 
 class MainActivity : ComponentActivity() {
@@ -481,6 +483,10 @@ fun SoloChefApp() {
                 }
             }
 
+            composable(Screen.IngredientLibrary.route) {
+                IngredientLibraryScreen(onBack = { navController.popBackStack() })
+            }
+
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onNavigateToLibrary = { navController.navigate(Screen.Library.route) },
@@ -492,7 +498,8 @@ fun SoloChefApp() {
                             tastingNotes = storage.getTastingNotes()
                         }
                     },
-                    onNavigateToTasting = { navController.navigate("create_tasting?editId=${System.currentTimeMillis()}") }
+                    onNavigateToTasting = { navController.navigate("create_tasting?editId=${System.currentTimeMillis()}") },
+                    onNavigateToIngredients = { navController.navigate(Screen.IngredientLibrary.route) }
                 )
             }
         }
