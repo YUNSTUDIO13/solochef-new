@@ -294,30 +294,6 @@ fun CreateRecipeScreen(
                     Text("一键调味", Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White)
                 }
             }
-            Spacer(Modifier.height(20.dp))
-
-            // BOM snapshot inside white card (Web)
-            Surface(Modifier.fillMaxWidth(), RoundedCornerShape(40.dp), Color.White, border = BorderStroke(1.dp, Sage200)) {
-                Column(Modifier.padding(32.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Column {
-                            Text("食材全家福 (BOM Snapshot)", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
-                            Text("拍摄已准备好的所有食材，方便后续核对", fontSize = 10.sp, color = Sage400)
-                        }
-                        if (bomSnapshot != null) IconButton(onClick = { bomSnapshot = null }) { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp)) }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(24.dp)).border(2.dp, Sage100, RoundedCornerShape(24.dp)).background(Sage50).clickable { imageTarget = "bom"; bomLoading = true; pickLauncher.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) {
-                        if (bomLoading) CircularProgressIndicator(Modifier.size(32.dp), strokeWidth = 2.dp, color = Sage800)
-                        else if (bomSnapshot?.isNotEmpty() == true) AsyncImage(bomSnapshot!!, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                        else Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Surface(Modifier.size(64.dp), RoundedCornerShape(50), Color.White) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.CameraAlt, null, tint = Sage300, modifier = Modifier.size(32.dp)) } }
-                            Text("点击拍摄食材全拼", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 12.dp))
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(32.dp))
 
             // Material categories (Web)
             listOf("meat" to "肉禽 / 水产", "vegetable" to "蔬菜 / 蔬果", "seasoning" to "调味 / 其它").forEach { (cat, label) ->
