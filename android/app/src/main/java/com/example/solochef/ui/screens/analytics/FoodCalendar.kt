@@ -28,6 +28,7 @@ import coil.compose.AsyncImage
 import com.example.solochef.model.CookingRecord
 import com.example.solochef.model.Recipe
 import com.example.solochef.ui.theme.*
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -413,6 +414,7 @@ private fun DayDetailSheet(
     }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -520,7 +522,13 @@ private fun DayDetailSheet(
             if (onShareReceipt != null && receiptRecipes.isNotEmpty()) {
                 Spacer(Modifier.height(20.dp))
                 Surface(
-                    onClick = { onShareReceipt(receiptRecipes) },
+                    onClick = {
+                        val recipes = receiptRecipes
+                        scope.launch {
+                            sheetState.hide()
+                            onShareReceipt(recipes)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
                     color = Sage800

@@ -399,6 +399,14 @@ fun SoloChefApp() {
                     },
                     onDeleteRecord = { recordId ->
                         scope.launch {
+                            val record = cookingRecords.find { it.id == recordId }
+                            record?.let { rec ->
+                                recipes.find { it.id == rec.recipeId }?.let { recipe ->
+                                    val updated = recipe.copy(cooked_count = (recipe.cooked_count - 1).coerceAtLeast(0))
+                                    storage.saveRecipe(updated)
+                                    recipes = recipes.map { if (it.id == updated.id) updated else it }
+                                }
+                            }
                             storage.deleteCookingRecord(recordId)
                             cookingRecords = storage.getCookingRecords()
                             analyticsKey++

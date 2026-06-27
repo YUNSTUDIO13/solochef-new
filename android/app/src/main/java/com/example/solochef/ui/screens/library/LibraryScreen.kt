@@ -1,7 +1,9 @@
 package com.example.solochef.ui.screens.library
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,12 +14,12 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -52,7 +54,7 @@ fun LibraryScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedTags by viewModel.selectedTags.collectAsStateWithLifecycle()
     val selectedEnergy by viewModel.selectedEnergyLevels.collectAsStateWithLifecycle()
-    val showFilters by viewModel.showFilters.collectAsStateWithLifecycle()
+    var showSearchPopup by remember { mutableStateOf(false) }
 
     val filtered = remember(recipes, searchQuery, selectedTags, selectedEnergy) {
         recipes.filter { recipe ->
@@ -63,18 +65,21 @@ fun LibraryScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Sage100)
-            .padding(horizontal = 24.dp)
-            
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp)
+        ) {
         // Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 24.dp, bottom = 24.dp),
+                .padding(top = 24.dp, bottom = 6.dp),
             verticalAlignment = Alignment.Top
         ) {
             Column(Modifier.weight(1f)) {
@@ -103,6 +108,23 @@ fun LibraryScreen(
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
+            // Search button
+            Box {
+                Surface(
+                    onClick = { showSearchPopup = true },
+                    modifier = Modifier.size(44.dp),
+                    shape = CircleShape,
+                    color = Color.White,
+                    border = BorderStroke(1.5.dp, Color(0xFF2D4A3A)),
+                    shadowElevation = 4.dp
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Search, null, tint = Color(0xFF2D4A3A), modifier = Modifier.size(22.dp))
+                    }
+                }
+
+            }
+            Spacer(Modifier.width(12.dp))
             // New recipe button
             Surface(
                 onClick = onCreateClick,
@@ -117,158 +139,178 @@ fun LibraryScreen(
             }
         }
 
-        // Search & Filter
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.setSearchQuery(it) },
-                placeholder = {
-                    Text("搜索菜谱...", color = Sage300, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                },
-                leadingIcon = {
-                    Icon(Icons.Default.Search, null, tint = Sage500, modifier = Modifier.size(18.dp))
-                },
-                trailingIcon = {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (showFilters) Sage800 else Color.Transparent)
-                            .clickable { viewModel.toggleFilter() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.FilterList, null,
-                            tint = if (showFilters) Color.White else Sage500,
-                            modifier = Modifier.size(16.dp)
-                        )
+        // Content with gradient overlay
+        Box(Modifier.fillMaxSize()) {
+            if (filtered.isEmpty()) {
+                EmptyState(onCreateClick)
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(top = 0.dp, bottom = 80.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(filtered, key = { it.id }) { recipe ->
+                        RecipeCard(recipe = recipe, onClick = { onSelectRecipe(recipe) })
                     }
-                },
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Sage400,
-                    unfocusedBorderColor = Sage200,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                ),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+                }
+                
+                // Transparent dark gradient overlay at top of recipe grid
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(24.dp)
+                        .align(Alignment.TopCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Sage100.copy(alpha = 0.35f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+            }
         }
+        } // end Column
 
-        // Filter Panel
+        // Search popup overlay — frosted glass, centered at top
         AnimatedVisibility(
-            visible = showFilters,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
+            visible = showSearchPopup,
+            enter = fadeIn(animationSpec = tween(200)),
+            exit = fadeOut(animationSpec = tween(150))
         ) {
-            Column(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
-                    .heightIn(max = 400.dp)
-                    .background(Color.White, RoundedCornerShape(32.dp))
-                    .border(1.dp, Sage200, RoundedCornerShape(32.dp))
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp)
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { showSearchPopup = false }
             ) {
-                // Tag counts for dynamic filter display
-                val tagCounts = remember(recipes) {
-                    val map = mutableMapOf<String, Int>()
-                    recipes.forEach { r -> r.tags.forEach { tag -> map[tag] = (map[tag] ?: 0) + 1 } }
-                    map
-                }
-
-                // Process Tags
-                FilterSection(
-                    title = "烹饪工艺",
-                    tags = COOKING_PROCESS_TAGS,
-                    tagCounts = tagCounts,
-                    selected = selectedTags,
-                    onToggle = { viewModel.toggleTag(it) },
-                    onClearAll = { viewModel.clearProcessTags(COOKING_PROCESS_TAGS) }
-                )
-                Spacer(Modifier.height(20.dp))
-
-                // Cuisine Tags
-                FilterSection(
-                    title = "菜系维度",
-                    tags = CUISINE_TAGS,
-                    tagCounts = tagCounts,
-                    selected = selectedTags,
-                    onToggle = { viewModel.toggleTag(it) },
-                    onClearAll = { viewModel.clearCuisineTags(CUISINE_TAGS) }
-                )
-                Spacer(Modifier.height(20.dp))
-
-                // Energy Level
-                Text(
-                    "精力等级",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp,
-                    color = Sage400,
+                Card(
                     modifier = Modifier
-                )
-                @OptIn(ExperimentalLayoutApi::class)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        label = "全部",
-                        selected = selectedEnergy.isEmpty(),
-                        onClick = { viewModel.clearAllFilters() },
-                        selectedColor = Sage800,
-                        unselectedColor = Sage500
-                    )
-                    ENERGY_LEVEL_OPTIONS.forEach { (level, label) ->
-                        FilterChip(
-                            label = label,
-                            selected = level in selectedEnergy,
-                            onClick = { viewModel.toggleEnergyLevel(level) },
-                            selectedColor = Sage800,
-                            unselectedColor = Sage500
-                        )
-                    }
-                }
-
-                // Clear all
-                if (selectedTags.isNotEmpty() || selectedEnergy.isNotEmpty()) {
-                    Spacer(Modifier.height(16.dp))
-                    Divider(color = Sage100)
-                    TextButton(
-                        onClick = { viewModel.clearAllFilters() },
-                        modifier = Modifier.fillMaxWidth()
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(top = 80.dp)
+                        .align(Alignment.TopCenter),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.94f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(20.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { /* consume click, prevent dismiss */ }
                     ) {
-                        Text(
-                            "清除所有过滤",
-                            color = Red500,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 2.sp
+                        // Search field (compact height)
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { viewModel.setSearchQuery(it) },
+                            placeholder = {
+                                Text("搜索菜谱...",
+                                    style = TextStyle(fontSize = 11.sp, lineHeight = 11.sp, platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                                    color = Sage300, fontWeight = FontWeight.Bold)
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Search, null, tint = Sage500, modifier = Modifier.size(18.dp))
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Sage400,
+                                unfocusedBorderColor = Sage200,
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            ),
+                            textStyle = TextStyle(fontSize = 11.sp, lineHeight = 11.sp, platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
                         )
+                        Spacer(Modifier.height(16.dp))
+                        
+                        val tagCounts = remember(recipes) {
+                            val map = mutableMapOf<String, Int>()
+                            recipes.forEach { r -> r.tags.forEach { tag -> map[tag] = (map[tag] ?: 0) + 1 } }
+                            map
+                        }
+                        
+                        // Auto-expand; scroll when near screen edge
+                        Column(
+                            modifier = Modifier
+                                .heightIn(max = 420.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            FilterSection(
+                                title = "烹饪工艺",
+                                tags = COOKING_PROCESS_TAGS,
+                                tagCounts = tagCounts,
+                                selected = selectedTags,
+                                onToggle = { viewModel.toggleTag(it) },
+                                onClearAll = { viewModel.clearProcessTags(COOKING_PROCESS_TAGS) }
+                            )
+                            Spacer(Modifier.height(14.dp))
+                            FilterSection(
+                                title = "菜系维度",
+                                tags = CUISINE_TAGS,
+                                tagCounts = tagCounts,
+                                selected = selectedTags,
+                                onToggle = { viewModel.toggleTag(it) },
+                                onClearAll = { viewModel.clearCuisineTags(CUISINE_TAGS) }
+                            )
+                            Spacer(Modifier.height(14.dp))
+                            Text(
+                                "精力等级",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 2.sp,
+                                color = Sage400
+                            )
+                            @OptIn(ExperimentalLayoutApi::class)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FilterChip(
+                                    label = "全部",
+                                    selected = selectedEnergy.isEmpty(),
+                                    onClick = { viewModel.clearAllFilters() },
+                                    selectedColor = Sage800,
+                                    unselectedColor = Sage500
+                                )
+                                ENERGY_LEVEL_OPTIONS.forEach { (level, label) ->
+                                    FilterChip(
+                                        label = label,
+                                        selected = level in selectedEnergy,
+                                        onClick = { viewModel.toggleEnergyLevel(level) },
+                                        selectedColor = Sage800,
+                                        unselectedColor = Sage500
+                                    )
+                                }
+                            }
+                            if (selectedTags.isNotEmpty() || selectedEnergy.isNotEmpty()) {
+                                Spacer(Modifier.height(12.dp))
+                                Divider(color = Sage100)
+                                TextButton(
+                                    onClick = { viewModel.clearAllFilters() },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        "清除所有过滤",
+                                        color = Red500,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black,
+                                        letterSpacing = 2.sp
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
-
-        Spacer(Modifier.height(24.dp))
-
-        // Content
-        if (filtered.isEmpty()) {
-            EmptyState(onCreateClick)
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 80.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(filtered, key = { it.id }) { recipe ->
-                    RecipeCard(recipe = recipe, onClick = { onSelectRecipe(recipe) })
-                }
-            }
-        }
-    }
+    } // end Box
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -329,6 +371,7 @@ private fun FilterChip(
         onClick = onClick,
         shape = RoundedCornerShape(50),
         color = if (selected) selectedColor else Sage50,
+        border = if (selected) null else BorderStroke(1.dp, Sage300),
         contentColor = if (selected) Color.White else unselectedColor
     ) {
         Text(
