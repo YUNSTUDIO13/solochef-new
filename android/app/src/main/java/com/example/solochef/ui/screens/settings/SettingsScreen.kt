@@ -90,7 +90,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(24.dp))
 
         // Header
-        Text("独厨中心", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
+        Text("独厨中心", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Color(0xFF2D4A3A))
         Text("饿的时候打开，会有好事发生", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 8.dp))
 
         Spacer(Modifier.height(24.dp))
@@ -102,11 +102,11 @@ fun SettingsScreen(
             },
             enabled = !isExporting,
             shape = RoundedCornerShape(32.dp),
-            color = Sage900,
+            color = Color(0xFF2D4A3A),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(16.dp), color = White10, modifier = Modifier.size(48.dp)) {
+            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(12.dp), color = White10, modifier = Modifier.size(36.dp)) {
                     Box(contentAlignment = Alignment.Center) {
                         if (isExporting) CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
                         else Icon(Icons.Default.Save, null, tint = Color.White, modifier = Modifier.size(22.dp))
@@ -119,7 +119,7 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(10.dp))
 
         // ─── Import Button ────────────────────────────
         Surface(
@@ -130,8 +130,8 @@ fun SettingsScreen(
             border = BorderStroke(2.dp, Sage200),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(16.dp), color = Sage50, modifier = Modifier.size(48.dp)) {
+            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(12.dp), color = Sage50, modifier = Modifier.size(36.dp)) {
                     Box(contentAlignment = Alignment.Center) {
                         if (isImporting) CircularProgressIndicator(Modifier.size(22.dp), color = Sage400, strokeWidth = 2.dp)
                         else Icon(Icons.Default.Add, null, tint = Sage400, modifier = Modifier.size(22.dp))
@@ -144,7 +144,7 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(10.dp))
 
         // ─── 拾味手记 ────────────────────────────
         Surface(
@@ -154,8 +154,8 @@ fun SettingsScreen(
             border = BorderStroke(2.dp, Sage200),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFFFF3E0), modifier = Modifier.size(48.dp)) {
+            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFFF3E0), modifier = Modifier.size(36.dp)) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Star, null, tint = Color(0xFFFF9800), modifier = Modifier.size(22.dp))
                     }
@@ -167,7 +167,7 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(10.dp))
     }
 }
 

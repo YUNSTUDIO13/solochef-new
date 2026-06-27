@@ -363,6 +363,21 @@ class LocalFileManager(private val context: Context) {
         count
     }
 
+    // ─── Preferences ──────────────────────────────────
+
+    suspend fun getLibraryName(): String = withContext(Dispatchers.IO) {
+        val f = File(dataDir, "_library_name.json")
+        if (f.exists()) {
+            try {
+                json.decodeFromString<String>(f.readText())
+            } catch (_: Exception) { "菜谱库" }
+        } else "菜谱库"
+    }
+
+    suspend fun saveLibraryName(name: String) = withContext(Dispatchers.IO) {
+        File(dataDir, "_library_name.json").writeText(json.encodeToString(name))
+    }
+
     // ─── Helpers ───────────────────────────────────────
 
     private fun catLabel(cat: String) = when (cat) {

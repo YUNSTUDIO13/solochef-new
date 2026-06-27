@@ -46,6 +46,8 @@ import com.example.solochef.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
+    libraryName: String = "菜谱库",
+    onLibraryNameChange: (String) -> Unit = {},
     onSelectRecipe: (Recipe) -> Unit,
     onCreateClick: () -> Unit,
     viewModel: LibraryViewModel = viewModel()
@@ -55,6 +57,8 @@ fun LibraryScreen(
     val selectedTags by viewModel.selectedTags.collectAsStateWithLifecycle()
     val selectedEnergy by viewModel.selectedEnergyLevels.collectAsStateWithLifecycle()
     var showSearchPopup by remember { mutableStateOf(false) }
+    var showRenamePopup by remember { mutableStateOf(false) }
+    var renameText by remember { mutableStateOf("") }
 
     val filtered = remember(recipes, searchQuery, selectedTags, selectedEnergy) {
         recipes.filter { recipe ->
@@ -83,49 +87,51 @@ fun LibraryScreen(
             verticalAlignment = Alignment.Top
         ) {
             Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    libraryName,
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.05).sp,
+                    color = Color(0xFF2D4A3A),
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        renameText = libraryName
+                        showRenamePopup = true
+                    }
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        "菜谱库",
-                        fontSize = 40.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.05).sp,
-                        color = Sage900
-                    )
-                    Text(
-                        "(${recipes.size})",
-                        fontSize = 20.sp,
+                        "好好吃饭，就是修行",
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Sage400,
-                        modifier = Modifier.padding(start = 6.dp, bottom = 4.dp)
+                        letterSpacing = 2.sp,
+                        color = Sage500
                     )
                 }
-                Text(
-                    "好好吃饭，就是修行",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp,
-                    color = Sage500,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
             }
             // Search button
             Box {
-                Surface(
-                    onClick = { showSearchPopup = true },
-                    modifier = Modifier.size(44.dp),
-                    shape = CircleShape,
-                    color = Color.White,
-                    border = BorderStroke(1.5.dp, Color(0xFF2D4A3A)),
-                    shadowElevation = 4.dp
-                ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Search, null, tint = Color(0xFF2D4A3A), modifier = Modifier.size(22.dp))
-                    }
+            Surface(
+                onClick = { showSearchPopup = true },
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                color = Color.White,
+                border = BorderStroke(1.5.dp, Color(0xFF2D4A3A)),
+                shadowElevation = 4.dp
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Search, null, tint = Color(0xFF2D4A3A), modifier = Modifier.size(22.dp))
                 }
+            }
 
             }
             Spacer(Modifier.width(12.dp))
-            // New recipe button
+            // New recipe button + count
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Surface(
                 onClick = onCreateClick,
                 modifier = Modifier.size(44.dp),
@@ -137,7 +143,15 @@ fun LibraryScreen(
                     Icon(Icons.Default.Add, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(22.dp))
                 }
             }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "${recipes.size}",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black,
+                color = Sage400
+            )
         }
+        } // end Header Row
 
         // Content with gradient overlay
         Box(Modifier.fillMaxSize()) {
@@ -304,6 +318,85 @@ fun LibraryScreen(
                                         letterSpacing = 2.sp
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Rename popup overlay
+        if (showRenamePopup) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { showRenamePopup = false }
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.94f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(24.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { /* consume click */ }
+                    ) {
+                        Text(
+                            "修改名称",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Sage900
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = renameText,
+                            onValueChange = { if (it.length <= 4) renameText = it },
+                            placeholder = {
+                                Text("请输入修改后的名称",
+                                    style = TextStyle(fontSize = 11.sp, lineHeight = 11.sp, platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                                    color = Sage300, fontWeight = FontWeight.Bold)
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            textStyle = TextStyle(fontSize = 13.sp, color = Sage900),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Sage400,
+                                unfocusedBorderColor = Sage200,
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(24.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(onClick = { showRenamePopup = false }) {
+                                Text("取消", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage500)
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Button(
+                                onClick = {
+                                    if (renameText.isNotBlank()) onLibraryNameChange(renameText.trim())
+                                    showRenamePopup = false
+                                },
+                                shape = RoundedCornerShape(50),
+                                colors = ButtonDefaults.buttonColors(containerColor = Sage800)
+                            ) {
+                                Text("确认", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
                             }
                         }
                     }

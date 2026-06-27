@@ -99,6 +99,7 @@ fun SoloChefApp() {
     var feedbackBatchRecipes by remember { mutableStateOf<List<Recipe>>(emptyList()) }
     var feedbackReceiptDate by remember { mutableStateOf<Long?>(null) }
     var analyticsKey by remember { mutableIntStateOf(0) }
+    var libraryName by remember { mutableStateOf("菜谱库") }
 
     LaunchedEffect(Unit) {
         recipes = storage.getAllRecipes()
@@ -106,6 +107,7 @@ fun SoloChefApp() {
         tastingNotes = storage.getTastingNotes()
         stats = storage.getStats()
         activeBatch = storage.getActiveBatch()
+        libraryName = storage.getLibraryName()
     }
 
     val mainScreens = listOf(Screen.Dashboard, Screen.Library, Screen.Analytics, Screen.Settings)
@@ -215,6 +217,8 @@ fun SoloChefApp() {
 
             composable(Screen.Library.route) {
                 LibraryScreen(
+                    libraryName = libraryName,
+                    onLibraryNameChange = { libraryName = it; scope.launch { storage.saveLibraryName(it) } },
                     onSelectRecipe = { r -> selectedRecipe = r; navController.navigate("recipe_detail/${r.id}") },
                     onCreateClick = { navController.navigate(Screen.CreateRecipe.route) }
                 )

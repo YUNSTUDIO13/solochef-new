@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -86,9 +88,9 @@ fun DashboardScreen(
 
     Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 120.dp)) {
         Spacer(Modifier.height(24.dp))
-        Text("独厨SoloChef", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
+        Text("独厨SoloChef", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Color(0xFF2D4A3A))
         Text("人生不将就，从我的精品厨房开始", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 4.dp))
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
 
         // Task Module (no FireStatusHeader per web spec)
 
@@ -108,7 +110,7 @@ fun DashboardScreen(
                         }
                         // Count badge — circle, right-aligned
                         Surface(modifier = Modifier.size(24.dp), shape = CircleShape, color = Amber400) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("${batch.recipeIds.size}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900) }
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("${batch.recipeIds.size}", style = TextStyle(fontSize = 10.sp, lineHeight = 10.sp, platformStyle = PlatformTextStyle(includeFontPadding = false)), fontWeight = FontWeight.Black, color = Sage900) }
                         }
                     }
                     Spacer(Modifier.weight(1f))
@@ -151,9 +153,13 @@ fun DashboardScreen(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("主厨力荐", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.width(3.dp).height(14.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFF2D4A3A)))
+                Spacer(Modifier.width(8.dp))
+                Text("主厨力荐", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
+            }
             Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Sage400, modifier = Modifier.size(14.dp))
         }
         Spacer(Modifier.height(12.dp))
@@ -189,9 +195,13 @@ fun DashboardScreen(
             }
 
             // ── 拾味手记 ──
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("拾味手记", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.width(3.dp).height(14.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFFFF9800)))
+                    Spacer(Modifier.width(8.dp))
+                    Text("拾味手记", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
+                }
                 Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(14.dp))
             }
             Spacer(Modifier.height(12.dp))
