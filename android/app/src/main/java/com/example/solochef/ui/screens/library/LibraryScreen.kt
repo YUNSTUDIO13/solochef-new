@@ -163,7 +163,7 @@ fun LibraryScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(top = 0.dp, bottom = 80.dp),
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     items(filtered, key = { it.id }) { recipe ->
                         RecipeCard(recipe = recipe, onClick = { onSelectRecipe(recipe) })

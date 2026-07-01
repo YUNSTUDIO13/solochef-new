@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.solochef.model.Recipe
 import com.example.solochef.ui.theme.*
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WokHeatRankingScreen(

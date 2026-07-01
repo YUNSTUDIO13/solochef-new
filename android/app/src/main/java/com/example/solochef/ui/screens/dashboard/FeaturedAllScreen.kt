@@ -25,7 +25,6 @@ import com.example.solochef.model.Recipe
 import com.example.solochef.ui.screens.library.COOKING_PROCESS_TAGS
 import com.example.solochef.ui.screens.library.CUISINE_TAGS
 import com.example.solochef.ui.theme.*
-
 @Composable
 fun FeaturedAllScreen(
     recipes: List<Recipe>,
@@ -112,7 +111,7 @@ fun FeaturedAllScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 100.dp),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             ) {
                 items(filtered, key = { it.id }) { recipe ->
                     Box(

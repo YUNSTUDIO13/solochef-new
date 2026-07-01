@@ -203,7 +203,7 @@ fun IngredientSelectorSheet(
                             cat.ingredients
                                 .filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }
                                 .map { it to cat }
-                        }
+                        }.distinctBy { (ing, _) -> ing.id }
                         Column(Modifier.fillMaxSize().padding(12.dp)) {
                             Text(
                                 "搜索 \"${searchQuery.trim()}\" (${globalResults.size})",
@@ -350,37 +350,50 @@ fun IngredientSelectorSheet(
         val catId = selectedCategoryId!!
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            icon = { Icon(Icons.Default.Star, null, tint = Sage900) },
-            title = { Text("添加食材", fontWeight = FontWeight.Bold, color = Sage900) },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(28.dp),
+            title = { Text("添加食材", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900) },
             text = {
                 OutlinedTextField(
                     value = newIngredientName,
                     onValueChange = { newIngredientName = it },
-                    label = { Text("食材名称") },
+                    placeholder = { Text("食材名称", color = Sage300, fontSize = 13.sp) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp, color = Sage900),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Sage400,
+                        unfocusedBorderColor = Sage200,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    val name = newIngredientName.trim()
-                    if (name.isNotEmpty()) {
-                        val newItem = IngredientItem(
-                            id = UUID.randomUUID().toString(),
-                            name = name,
-                            categoryId = catId,
-                            isStandard = false
-                        )
-                        val updated = lib!!.copy(categories = categories.map { cat ->
-                            if (cat.id == catId) cat.copy(ingredients = cat.ingredients + newItem) else cat
-                        })
-                        saveAndRefresh(updated)
-                    }
-                    showAddDialog = false
-                }) { Text("添加", color = Sage900) }
+                Button(
+                    onClick = {
+                        val name = newIngredientName.trim()
+                        if (name.isNotEmpty()) {
+                            val newItem = IngredientItem(
+                                id = UUID.randomUUID().toString(),
+                                name = name,
+                                categoryId = catId,
+                                isStandard = false
+                            )
+                            val updated = lib!!.copy(categories = categories.map { cat ->
+                                if (cat.id == catId) cat.copy(ingredients = cat.ingredients + newItem) else cat
+                            })
+                            saveAndRefresh(updated)
+                        }
+                        showAddDialog = false
+                    },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = Sage800)
+                ) { Text("添加", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White) }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) { Text("取消", color = Sage400) }
+                TextButton(onClick = { showAddDialog = false }) { Text("取消", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage500) }
             }
         )
     }

@@ -395,19 +395,23 @@ private fun DayDetailSheet(
     if (deleteRecordId != null) {
         AlertDialog(
             onDismissRequest = { deleteRecordId = null },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(28.dp),
             title = { Text("请确认是否删除？", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900) },
             text = { Text("删除后无法恢复", fontSize = 13.sp, color = Sage500) },
             confirmButton = {
-                TextButton(onClick = { deleteRecordId = null }) {
-                    Text("取消", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Sage800)
-                }
+                Button(
+                    onClick = {
+                        val id = deleteRecordId; deleteRecordId = null
+                        onDeleteRecord?.invoke(id!!)
+                    },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                ) { Text("确认", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White) }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    val id = deleteRecordId; deleteRecordId = null
-                    onDeleteRecord?.invoke(id!!)
-                }) {
-                    Text("确认", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFEF4444))
+                TextButton(onClick = { deleteRecordId = null }) {
+                    Text("取消", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage500)
                 }
             }
         )
