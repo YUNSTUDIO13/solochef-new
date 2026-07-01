@@ -51,7 +51,8 @@ fun RecipeCubeSelector(
     var shuffleKey by remember { mutableIntStateOf(0) }
     val gridItems = remember(pool, shuffleKey) {
         if (pool.isEmpty()) emptyList<Recipe>()
-        else List(9) { pool[it % pool.size] }.shuffled()
+        else if (pool.size >= 9) pool.shuffled().take(9)
+        else List(9) { pool.shuffled()[it % pool.size] }
     }
     if (gridItems.size < 9) { LaunchedEffect(Unit) { onClose() }; return }
 

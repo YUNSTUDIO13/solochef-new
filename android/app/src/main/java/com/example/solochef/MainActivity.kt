@@ -194,9 +194,9 @@ fun SoloChefApp() {
             startDestination = Screen.Dashboard.route,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = paddingValues.calculateTopPadding())
         ) {
             composable(Screen.Dashboard.route) {
+                Box(Modifier.statusBarsPadding()) {
                 DashboardScreen(
                     activeBatchOverride = activeBatch,
                     tastingNotes = tastingNotes,
@@ -215,15 +215,18 @@ fun SoloChefApp() {
                         }
                     }
                 )
+                }
             }
 
             composable(Screen.Library.route) {
+                Box(Modifier.statusBarsPadding()) {
                 LibraryScreen(
                     libraryName = libraryName,
                     onLibraryNameChange = { libraryName = it; scope.launch { storage.saveLibraryName(it) } },
                     onSelectRecipe = { r -> selectedRecipe = r; navController.navigate("recipe_detail/${r.id}") },
                     onCreateClick = { navController.navigate(Screen.CreateRecipe.route) }
                 )
+                }
             }
 
             composable(Screen.RecipeDetail.route, arguments = listOf(navArgument("recipeId") { type = NavType.StringType })) { entry ->
@@ -242,6 +245,7 @@ fun SoloChefApp() {
             composable(Screen.CreateRecipe.route, arguments = listOf(navArgument("editId") { type = NavType.StringType; defaultValue = "" })) { entry ->
                 val editId = entry.arguments?.getString("editId") ?: ""
                 val existing = if (editId.isNotBlank()) recipes.find { it.id == editId } else null
+                Box(Modifier.statusBarsPadding()) {
                 CreateRecipeScreen(
                     existingRecipe = existing,
                     onSave = { recipe ->
@@ -250,9 +254,11 @@ fun SoloChefApp() {
                     },
                     onCancel = { navController.popBackStack() }
                 )
+                }
             }
 
             composable(Screen.OrderEngine.route) {
+                Box(Modifier.statusBarsPadding()) {
                 OrderEngineScreen(
                     activeBatch = activeBatch,
                     onConfirm = { ids ->
@@ -277,9 +283,11 @@ fun SoloChefApp() {
                     },
                     onCancel = { navController.popBackStack() }
                 )
+                }
             }
 
             composable(Screen.BatchDetail.route) {
+                Box(Modifier.statusBarsPadding()) {
                 activeBatch?.let { batch ->
                     BatchDetailScreen(
                         batch = batch, recipes = recipes,
@@ -342,17 +350,21 @@ fun SoloChefApp() {
                         onOpenSOP = { r -> selectedRecipe = r; navController.navigate("execution/${r.id}/false") }
                     )
                 } ?: run { Box(Modifier.fillMaxSize().background(Sage100)) }
+                }
             }
 
             composable(Screen.Picking.route, arguments = listOf(navArgument("recipeId") { type = NavType.StringType }, navArgument("isLazy") { type = NavType.BoolType })) { entry ->
+                Box(Modifier.statusBarsPadding()) {
                 val rid = entry.arguments?.getString("recipeId") ?: ""
                 val lazy = entry.arguments?.getBoolean("isLazy") ?: false
                 recipes.find { it.id == rid }?.let { recipe ->
                     PickingScreen(recipe = recipe, onConfirm = { navController.navigate("execution/${recipe.id}/$lazy") { popUpTo(Screen.Picking.route) { inclusive = true } } }, onCancel = { navController.popBackStack() })
                 }
+                }
             }
 
             composable(Screen.Execution.route, arguments = listOf(navArgument("recipeId") { type = NavType.StringType }, navArgument("isLazy") { type = NavType.BoolType })) { entry ->
+                Box(Modifier.statusBarsPadding()) {
                 val rid = entry.arguments?.getString("recipeId") ?: ""
                 val lazy = entry.arguments?.getBoolean("isLazy") ?: false
                 recipes.find { it.id == rid }?.let { recipe ->
@@ -377,9 +389,11 @@ fun SoloChefApp() {
                         navController.navigate("feedback/${recipe.id}") { popUpTo(Screen.Execution.route) { inclusive = true } }
                     })
                 }
+                }
             }
 
             composable(Screen.Feedback.route, arguments = listOf(navArgument("recipeId") { type = NavType.StringType })) { entry ->
+                Box(Modifier.statusBarsPadding()) {
                 val rid = entry.arguments?.getString("recipeId") ?: ""
                 recipes.find { it.id == rid }?.let { recipe ->
                     FeedbackScreen(recipe = recipe, batchRecipes = feedbackBatchRecipes, receiptDate = feedbackReceiptDate ?: activeBatch?.batch_notes?.toLongOrNull(), onDone = {
@@ -387,9 +401,11 @@ fun SoloChefApp() {
                         navController.navigate(Screen.Dashboard.route) { popUpTo(Screen.Dashboard.route) { inclusive = true } }
                     })
                 }
+                }
             }
 
             composable(Screen.Analytics.route) { key(analyticsKey) {
+                Box(Modifier.statusBarsPadding()) {
                 AnalyticsScreen(
                     recipes = recipes,
                     cookingRecords = cookingRecords,
@@ -435,21 +451,29 @@ fun SoloChefApp() {
                         }
                     }
                 )
+                }
             } }
 
             composable(Screen.WokHeatRanking.route) {
+                Box(Modifier.statusBarsPadding()) {
                 WokHeatRankingScreen(recipes = recipes, onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Screen.FeaturedAll.route) {
+                Box(Modifier.statusBarsPadding()) {
                 FeaturedAllScreen(recipes = recipes, onBack = { navController.popBackStack() }, onSelectRecipe = { r -> selectedRecipe = r; navController.navigate("recipe_detail/${r.id}") })
+                }
             }
 
             composable(Screen.TastingAll.route) {
+                Box(Modifier.statusBarsPadding()) {
                 TastingNotesListScreen(tastingNotes = tastingNotes, onBack = { navController.popBackStack() }, onSelectTasting = { id -> navController.navigate("tasting_detail/$id") })
+                }
             }
 
             composable(Screen.CreateTasting.route) { backStackEntry ->
+                Box(Modifier.statusBarsPadding()) {
                 val editId = backStackEntry.arguments?.getString("editId")
                 CreateTastingScreen(
                     existingNote = tastingNotes.find { it.id == editId },
@@ -459,12 +483,14 @@ fun SoloChefApp() {
                         navController.popBackStack()
                     }
                 )
+                }
             }
 
             composable(Screen.TastingDetail.route) { backStackEntry ->
                 val tastingId = backStackEntry.arguments?.getString("tastingId") ?: ""
                 val note = tastingNotes.find { it.id == tastingId }
                 if (note != null) {
+                    Box(Modifier.statusBarsPadding()) {
                     TastingDetailScreen(
                         note = note,
                         onBack = { navController.popBackStack() },
@@ -481,13 +507,17 @@ fun SoloChefApp() {
                         }
                     )
                 }
+                }
             }
 
             composable(Screen.IngredientLibrary.route) {
+                Box(Modifier.statusBarsPadding()) {
                 IngredientLibraryScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             composable(Screen.Settings.route) {
+                Box(Modifier.statusBarsPadding()) {
                 SettingsScreen(
                     onNavigateToLibrary = { navController.navigate(Screen.Library.route) },
                     onNavigateToAnalytics = { analyticsKey++; navController.navigate(Screen.Analytics.route) },
@@ -501,6 +531,7 @@ fun SoloChefApp() {
                     onNavigateToTasting = { navController.navigate("create_tasting?editId=${System.currentTimeMillis()}") },
                     onNavigateToIngredients = { navController.navigate(Screen.IngredientLibrary.route) }
                 )
+                }
             }
         }
     }

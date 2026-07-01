@@ -66,8 +66,8 @@ fun FoodCalendar(
     val todayMonth = today.get(Calendar.MONTH)
     val todayDay = today.get(Calendar.DAY_OF_MONTH)
 
-    // Year range: 2024 to current year + 1
-    val yearRange = (2024..todayYear + 1).toList()
+    // Year range: 2024 to current year + 10
+    val yearRange = (2024..todayYear + 10).toList()
     val months = listOf("1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月")
 
     // Build day grid
@@ -83,19 +83,31 @@ fun FoodCalendar(
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Month navigation with clickable picker
+        val isCurrentView = currentYear == todayYear && currentMonth == todayMonth
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = {
-                    if (currentMonth == 0) { currentMonth = 11; currentYear-- }
-                    else currentMonth--
-                },
-                modifier = Modifier.size(32.dp)
+            // Left side: arrow + placeholder (to balance "今天" on right)
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.KeyboardArrowLeft, null, tint = Sage500, modifier = Modifier.size(20.dp))
+                IconButton(
+                    onClick = {
+                        if (currentMonth == 0) { currentMonth = 11; currentYear-- }
+                        else currentMonth--
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(Icons.Default.KeyboardArrowLeft, null, tint = Sage500, modifier = Modifier.size(20.dp))
+                }
+                if (!isCurrentView) {
+                    Box(modifier = Modifier.width(48.dp)) { /* placeholder */ }
+                }
             }
             Surface(
                 onClick = { pickerYear = currentYear; showMonthPicker = true },
@@ -104,17 +116,26 @@ fun FoodCalendar(
             ) {
                 Text(
                     monthLabel, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                    fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900
+                    fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900,
+                    textAlign = TextAlign.Center
                 )
             }
-            Row {
-                // Jump to today
-                val isCurrentView = currentYear == todayYear && currentMonth == todayMonth
+            // Right side: "今天" (when not current) + arrow
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 if (!isCurrentView) {
                     TextButton(
-                        onClick = { currentYear = todayYear; currentMonth = todayMonth }
+                        onClick = { currentYear = todayYear; currentMonth = todayMonth },
+                        modifier = Modifier.width(48.dp).padding(0.dp),
+                        contentPadding = PaddingValues(0.dp)
                     ) {
-                        Text("今天", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage400)
+                        Text(
+                            "今天", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage400,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
                 IconButton(

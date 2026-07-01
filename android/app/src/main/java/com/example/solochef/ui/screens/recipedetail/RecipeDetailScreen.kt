@@ -2,7 +2,6 @@ package com.example.solochef.ui.screens.recipedetail
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -14,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -42,66 +42,82 @@ fun RecipeDetailScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var ingLib by remember { mutableStateOf<IngredientLibrary?>(null) }
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     LaunchedEffect(Unit) {
         ingLib = LocalFileManager(context).getIngredientLibrary()
     }
 
     Box(Modifier.fillMaxSize().background(Sage50)) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            // Cover image — fixed height, not fillMaxHeight(fraction) which breaks in scroll
-            Box(Modifier.fillMaxWidth().height(240.dp)) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 80.dp)
+        ) {
+            // Cover image — naturally starts at screen top, extends into status bar
+            Box(Modifier.fillMaxWidth().height(280.dp + statusBarHeight)) {
                 AsyncImage(recipe.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent, Sage50.copy(0.9f)))))
-                // Back button — ALL named params to avoid overload confusion
-                Surface(
-                    onClick = onBack,
-                    modifier = Modifier.padding(24.dp).size(40.dp),
-                    shape = CircleShape,
-                    color = Color.Black.copy(0.35f)
-                ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(0.15f), Color.Transparent, Color.Transparent, Sage50.copy(0.92f)))))
+                // Back button — sits below status bar with systemBarsPadding
+                Box(Modifier.fillMaxSize().statusBarsPadding(), contentAlignment = Alignment.TopStart) {
+                    Surface(
+                        onClick = onBack,
+                        modifier = Modifier.padding(start = 20.dp, top = 8.dp).size(36.dp),
+                        shape = CircleShape,
+                        color = Color.Black.copy(0.3f),
+                        shadowElevation = 0.dp
+                    ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
             }
 
-            Column(Modifier.offset(y = (-40).dp).padding(horizontal = 24.dp)) {
-                Text(recipe.name, fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
-                Spacer(Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.offset(y = (-32).dp).padding(horizontal = 20.dp)) {
+                // Recipe name
+                Text(recipe.name, fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp, color = Sage900)
+                Spacer(Modifier.height(10.dp))
+
+                // Tags
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     recipe.tags.forEach { tag ->
-                        Surface(modifier = Modifier, shape = RoundedCornerShape(50), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
-                            Text(tag, Modifier.padding(horizontal = 12.dp, vertical = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
+                        Surface(shape = RoundedCornerShape(50), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                            Text(tag, Modifier.padding(horizontal = 10.dp, vertical = 3.dp), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, color = Sage400)
                         }
                     }
                 }
-                Spacer(Modifier.height(16.dp))
-                // Cost + Price in one row
-                Surface(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), Color.White, border = BorderStroke(1.dp, Sage200)) {
-                    Row(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                Spacer(Modifier.height(14.dp))
+
+                // Cost + Price card
+                Surface(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), Color.White, border = BorderStroke(1.dp, Sage200), shadowElevation = 0.dp) {
+                    Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("成本", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
+                            Spacer(Modifier.height(2.dp))
                             Text("¥%.2f".format(recipe.cost), fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900)
                         }
-                        Box(Modifier.width(1.dp).height(32.dp).background(Sage100))
+                        Box(Modifier.width(1.dp).height(28.dp).background(Sage100))
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("售价", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
+                            Spacer(Modifier.height(2.dp))
                             Text("¥%.2f".format(recipe.price), fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage800)
                         }
                     }
                 }
-                Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(20.dp))
 
+                // ─── 物料清单 ───
                 Text("物料清单 / INGREDIENTS", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
                 Spacer(Modifier.height(4.dp))
-                HorizontalDivider(color = Sage200.copy(0.5f))
-                Spacer(Modifier.height(16.dp))
+                HorizontalDivider(color = Sage200.copy(0.4f), thickness = 0.5.dp)
+                Spacer(Modifier.height(12.dp))
 
                 recipe.bom_snapshot?.let {
-                    Box(Modifier.fillMaxWidth().height(192.dp).clip(RoundedCornerShape(32.dp)).background(Color.White).border(1.dp, Sage200, RoundedCornerShape(32.dp)).padding(8.dp)) {
-                        AsyncImage(it, null, Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)), contentScale = ContentScale.Crop)
+                    Box(Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(24.dp)).background(Color.White).border(1.dp, Sage200, RoundedCornerShape(24.dp)).padding(6.dp)) {
+                        AsyncImage(it, null, Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)), contentScale = ContentScale.Crop)
                     }
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(16.dp))
                 }
 
                 listOf(MaterialCategory.Meat, MaterialCategory.Vegetable, MaterialCategory.Seasoning).forEach { cat ->
@@ -109,23 +125,23 @@ fun RecipeDetailScreen(
                     if (items.isEmpty()) return@forEach
                     val label = cat.label
                     val icon = when (cat) { MaterialCategory.Meat -> "🍖"; MaterialCategory.Vegetable -> "🥬"; MaterialCategory.Seasoning -> "🧂" }
-                    Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(icon, fontSize = 14.sp)
+                    Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(icon, fontSize = 13.sp)
                         Spacer(Modifier.width(4.dp))
                         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
                     }
                     items.chunked(2).forEach { row ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             row.forEach { m ->
                                 val matEmoji = ingLib?.emojiFor(m.item) ?: "🥬"
-                                Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                                Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
                                     Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Text(matEmoji, fontSize = 16.sp)
-                                        Spacer(Modifier.width(8.dp))
+                                        Text(matEmoji, fontSize = 15.sp)
+                                        Spacer(Modifier.width(6.dp))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 m.item,
-                                                style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Black, lineHeight = 13.sp),
+                                                style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Black, lineHeight = 12.sp),
                                                 color = Sage900,
                                                 maxLines = 2,
                                                 overflow = TextOverflow.Ellipsis
@@ -141,65 +157,80 @@ fun RecipeDetailScreen(
                             }
                             if (row.size == 1) Spacer(Modifier.weight(1f))
                         }
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(8.dp))
                     }
-                    Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(14.dp))
                 }
 
+                // ─── 烹饪步骤 ───
                 Text("烹饪步骤 / PROCESS", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
                 Spacer(Modifier.height(4.dp))
-                HorizontalDivider(color = Sage200.copy(0.5f))
-                Spacer(Modifier.height(24.dp))
+                HorizontalDivider(color = Sage200.copy(0.4f), thickness = 0.5.dp)
+                Spacer(Modifier.height(16.dp))
 
                 recipe.timeline.forEachIndexed { idx, step ->
-                    Row(Modifier.padding(bottom = 32.dp)) {
-                        Surface(modifier = Modifier.size(32.dp).align(Alignment.Top), shape = CircleShape, color = Color.White, border = BorderStroke(2.dp, Sage100)) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("${idx + 1}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900) }
+                    Column(Modifier.padding(bottom = 22.dp)) {
+                        // Title Row: step number (center-aligned with first line) + title + right-aligned duration
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(modifier = Modifier.size(30.dp), shape = CircleShape, color = Color.White, border = BorderStroke(1.5.dp, Sage200)) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("${idx + 1}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900) }
+                            }
+                            Spacer(Modifier.width(14.dp))
+                            Text(
+                                step.content,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Black,
+                                lineHeight = 16.sp,
+                                color = Sage900,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("${step.duration / 60} MINS", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Sage300)
                         }
-                        Spacer(Modifier.width(20.dp))
-                        Column {
-                            Text(step.content, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900)
-                            Text("${step.duration / 60} MINS", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Sage300, modifier = Modifier.padding(top = 4.dp))
-                            // Sub-tasks
-                            if (step.sub_tasks.isNotEmpty()) {
-                                Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = Sage50) {
-                                    Column(Modifier.padding(8.dp)) {
-                                        Text("并行子任务 / Parallel Tasks", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
-                                        step.sub_tasks.forEach { sub ->
-                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                                    Surface(modifier = Modifier.size(16.dp), shape = RoundedCornerShape(4.dp), color = Sage900) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp)) } }
-                                                    Spacer(Modifier.width(8.dp))
-                                                    Text(sub.content, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Sage800, maxLines = 4, overflow = TextOverflow.Ellipsis)
-                                                }
-                                                Text("${sub.duration / 60} MIN", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Sage400)
-                                            }
+                        // Sub-tasks — indented to align with title text
+                        val indent = 44.dp
+                        if (step.sub_tasks.isNotEmpty()) {
+                            Surface(modifier = Modifier.fillMaxWidth().padding(start = indent, top = 6.dp), shape = RoundedCornerShape(12.dp), color = Sage50, border = BorderStroke(0.5.dp, Sage200)) {
+                                Column(Modifier.padding(8.dp)) {
+                                    Text("并行子任务 / Parallel Tasks", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, color = Sage400)
+                                    Spacer(Modifier.height(4.dp))
+                                    step.sub_tasks.forEach { sub ->
+                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                                            Box(
+                                                Modifier
+                                                    .padding(top = 5.dp, end = 6.dp)
+                                                    .size(5.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Sage900)
+                                            )
+                                            Text(sub.content, fontSize = 11.sp, fontWeight = FontWeight.Bold, lineHeight = 16.sp, color = Sage800, modifier = Modifier.weight(1f))
+                                            Text("${sub.duration / 60} MIN", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Sage400, modifier = Modifier.padding(start = 8.dp, top = 3.dp))
                                         }
                                     }
                                 }
                             }
-                            step.images?.firstOrNull()?.let { img ->
-                                AsyncImage(img, null, Modifier.padding(top = 12.dp).fillMaxWidth().height(180.dp).clip(RoundedCornerShape(16.dp)).border(1.dp, Sage100, RoundedCornerShape(16.dp)), contentScale = ContentScale.Crop)
-                            }
+                        }
+                        step.images?.firstOrNull()?.let { img ->
+                            AsyncImage(img, null, Modifier.padding(start = indent, top = 8.dp).fillMaxWidth().height(160.dp).clip(RoundedCornerShape(14.dp)).border(1.dp, Sage100, RoundedCornerShape(14.dp)), contentScale = ContentScale.Crop)
                         }
                     }
                 }
             }
         }
 
-        // Action bar — sticky at bottom (outside scroll)
-        Surface(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp), color = Color.Transparent) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Surface(onClick = { showDeleteConfirm = true }, modifier = Modifier.size(56.dp), shape = RoundedCornerShape(24.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Delete, contentDescription = null, tint = Sage400, modifier = Modifier.size(24.dp)) }
+        // Action bar — sticky at bottom
+        Surface(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), color = Color.Transparent) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Surface(onClick = { showDeleteConfirm = true }, modifier = Modifier.size(52.dp), shape = RoundedCornerShape(20.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Delete, contentDescription = null, tint = Sage400, modifier = Modifier.size(22.dp)) }
                 }
-                Surface(onClick = { onEdit(recipe) }, modifier = Modifier.size(56.dp), shape = RoundedCornerShape(24.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Edit, contentDescription = null, tint = Sage400, modifier = Modifier.size(24.dp)) }
+                Surface(onClick = { onEdit(recipe) }, modifier = Modifier.size(52.dp), shape = RoundedCornerShape(20.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Edit, contentDescription = null, tint = Sage400, modifier = Modifier.size(22.dp)) }
                 }
-                Surface(onClick = onGoCook, modifier = Modifier.weight(1f).height(56.dp), shape = RoundedCornerShape(24.dp), color = DarkButton) {
+                Surface(onClick = onGoCook, modifier = Modifier.weight(1f).height(52.dp), shape = RoundedCornerShape(20.dp), color = DarkButton, shadowElevation = 4.dp) {
                     Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                         Icon(Icons.Default.PlayArrow, contentDescription = null, tint = GreenPlay, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(10.dp))
                         Text("去做饭", fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White)
                     }
                 }
