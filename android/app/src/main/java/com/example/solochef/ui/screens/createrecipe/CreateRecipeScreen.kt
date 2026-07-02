@@ -537,6 +537,8 @@ fun CreateRecipeScreen(
                         bom_snapshot = bomSnapshot,
                         energy_level = energy.value, is_featured = featured.value,
                         cost = c, price = p,
+                        last_cooked_at = existingRecipe?.last_cooked_at,
+                        cooked_count = existingRecipe?.cooked_count ?: 0,
                         materials = materials.value.mapValues { (_, mats) -> mats.map { if (it.unit.isEmpty()) it.copy(unit = "g") else it } },
                         timeline = timeline.value,
                         tags = tags.value,
