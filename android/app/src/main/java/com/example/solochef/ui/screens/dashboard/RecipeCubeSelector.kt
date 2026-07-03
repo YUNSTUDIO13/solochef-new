@@ -32,8 +32,6 @@ import com.example.solochef.model.*
 import com.example.solochef.ui.theme.*
 import kotlinx.coroutines.delay
 
-/** 温暖米色底色 — 与参考图一致 */
-val CubeBgCream = Color(0xFFF2EDE8)
 
 /** 卡片圆角 */
 private val CardRadius = RoundedCornerShape(20.dp)
@@ -110,7 +108,7 @@ fun RecipeCubeSelector(
     val cellSize = (screenWidthDp - horizontalPadding - gapTotal) / 3
     val g = 10.dp
 
-    Box(Modifier.fillMaxSize().background(CubeBgCream)) {
+    Box(Modifier.fillMaxSize().warmGradientBackground()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()

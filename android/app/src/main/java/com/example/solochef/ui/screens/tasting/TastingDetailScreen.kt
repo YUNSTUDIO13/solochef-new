@@ -51,7 +51,7 @@ fun TastingDetailScreen(
         )
     }
 
-    Column(Modifier.fillMaxSize().background(Sage100)) {
+    Column(Modifier.fillMaxSize().background(Color.Transparent)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.ArrowBack, null, tint = Sage900, modifier = Modifier.size(24.dp)) }
             Text("拾味手记", Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.Black, color = Sage900)
@@ -69,11 +69,20 @@ fun TastingDetailScreen(
 
             // URL
             if (note.url.isNotEmpty()) {
-                Surface(Modifier.fillMaxWidth().clickable {
-                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("url", note.url))
-                    android.widget.Toast.makeText(context, "链接已复制", android.widget.Toast.LENGTH_SHORT).show()
-                }, RoundedCornerShape(16.dp), Color.White, border = BorderStroke(1.dp, Sage200)) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                        .clickable {
+                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("url", note.url))
+                            android.widget.Toast.makeText(context, "链接已复制", android.widget.Toast.LENGTH_SHORT).show()
+                        },
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.Transparent
+                ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Link, null, tint = Sage400, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(12.dp))
@@ -86,7 +95,15 @@ fun TastingDetailScreen(
             }
 
             // Rating
-            Surface(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), Color.White, border = BorderStroke(1.dp, Sage200)) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .frostedGlassBackground()
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.Transparent
+            ) {
                 Row(Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     val starColor = Color(0xFFFF9800)
                     val fullStars = note.rating.toInt()
@@ -103,7 +120,15 @@ fun TastingDetailScreen(
 
             // Note
             if (note.note.isNotEmpty()) {
-                Surface(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), Color.White, border = BorderStroke(1.dp, Sage200)) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.Transparent
+                ) {
                     Column(Modifier.padding(16.dp)) {
                         Text("备注", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
                         Spacer(Modifier.height(8.dp))

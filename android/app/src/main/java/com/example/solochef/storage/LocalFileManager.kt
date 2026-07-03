@@ -305,7 +305,8 @@ class LocalFileManager(private val context: Context) {
             history = history,
             stats = stats,
             exportedAt = System.currentTimeMillis().toString(),
-            ingredient_library = getIngredientLibrary()
+            ingredient_library = getIngredientLibrary(),
+            custom_recipe_tags = getCustomRecipeTags()
         )
         sb.appendLine()
         sb.appendLine("$PAYLOAD_START")
@@ -394,6 +395,15 @@ class LocalFileManager(private val context: Context) {
             }
             if (merged != current) saveIngredientLibrary(merged)
         }
+        // Merge custom recipe tags
+        payload.custom_recipe_tags?.let { imported ->
+            val current = getCustomRecipeTags()
+            val merged = current.copy(
+                cookingProcessTags = (current.cookingProcessTags + imported.cookingProcessTags.filter { imp -> imp.id !in current.cookingProcessTags.map { it.id }.toSet() }).distinctBy { it.id },
+                cuisineTags = (current.cuisineTags + imported.cuisineTags.filter { imp -> imp.id !in current.cuisineTags.map { it.id }.toSet() }).distinctBy { it.id }
+            )
+            if (merged != current) saveCustomRecipeTags(merged)
+        }
         count
     }
 
@@ -428,6 +438,20 @@ class LocalFileManager(private val context: Context) {
 
     suspend fun saveIngredientLibrary(lib: IngredientLibrary) = withContext(Dispatchers.IO) {
         File(dataDir, "_ingredient_library.json").writeText(json.encodeToString(lib))
+    }
+
+    // ─── Custom Recipe Tags ─────────────────────────────
+
+    suspend fun getCustomRecipeTags(): CustomRecipeTags = withContext(Dispatchers.IO) {
+        val f = File(dataDir, "_custom_recipe_tags.json")
+        if (f.exists()) {
+            try { json.decodeFromString<CustomRecipeTags>(f.readText()) }
+            catch (_: Exception) { CustomRecipeTags() }
+        } else CustomRecipeTags()
+    }
+
+    suspend fun saveCustomRecipeTags(tags: CustomRecipeTags) = withContext(Dispatchers.IO) {
+        File(dataDir, "_custom_recipe_tags.json").writeText(json.encodeToString(tags))
     }
 
     // ─── Helpers ───────────────────────────────────────

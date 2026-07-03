@@ -42,23 +42,23 @@ fun RecipeDetailScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var ingLib by remember { mutableStateOf<IngredientLibrary?>(null) }
-    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     LaunchedEffect(Unit) {
         ingLib = LocalFileManager(context).getIngredientLibrary()
     }
 
-    Box(Modifier.fillMaxSize().background(Sage50)) {
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
+    Box(Modifier.fillMaxSize()) {
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 80.dp)
         ) {
             // Cover image — naturally starts at screen top, extends into status bar
             Box(Modifier.fillMaxWidth().height(280.dp + statusBarHeight)) {
                 AsyncImage(recipe.cover_image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(0.15f), Color.Transparent, Color.Transparent, Sage50.copy(0.92f)))))
-                // Back button — sits below status bar with systemBarsPadding
+                // Back button — sits below status bar with statusBarsPadding
                 Box(Modifier.fillMaxSize().statusBarsPadding(), contentAlignment = Alignment.TopStart) {
                     Surface(
                         onClick = onBack,
@@ -74,7 +74,13 @@ fun RecipeDetailScreen(
                 }
             }
 
-            Column(Modifier.offset(y = (-32).dp).padding(horizontal = 20.dp)) {
+            Surface(
+                Modifier
+                    .fillMaxWidth()
+                    .offset(y = (-32).dp),
+                color = Color.White
+            ) {
+                Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 80.dp)) {
                 // Recipe name
                 Text(recipe.name, fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp, color = Sage900)
                 Spacer(Modifier.height(10.dp))
@@ -82,7 +88,14 @@ fun RecipeDetailScreen(
                 // Tags
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     recipe.tags.forEach { tag ->
-                        Surface(shape = RoundedCornerShape(50), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, Sage200),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .frostedGlassBackground()
+                        ) {
                             Text(tag, Modifier.padding(horizontal = 10.dp, vertical = 3.dp), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, color = Sage400)
                         }
                     }
@@ -90,7 +103,16 @@ fun RecipeDetailScreen(
                 Spacer(Modifier.height(14.dp))
 
                 // Cost + Price card
-                Surface(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), Color.White, border = BorderStroke(1.dp, Sage200), shadowElevation = 0.dp) {
+                Surface(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .frostedGlassBackground()
+                        .border(1.dp, Sage200, RoundedCornerShape(16.dp)),
+                    RoundedCornerShape(16.dp),
+                    Color.Transparent,
+                    shadowElevation = 0.dp
+                ) {
                     Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("成本", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
@@ -108,7 +130,7 @@ fun RecipeDetailScreen(
                 Spacer(Modifier.height(20.dp))
 
                 // ─── 物料清单 ───
-                Text("物料清单 / INGREDIENTS", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
+                Text("物料清单", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
                 Spacer(Modifier.height(4.dp))
                 HorizontalDivider(color = Sage200.copy(0.4f), thickness = 0.5.dp)
                 Spacer(Modifier.height(12.dp))
@@ -134,7 +156,15 @@ fun RecipeDetailScreen(
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             row.forEach { m ->
                                 val matEmoji = ingLib?.emojiFor(m.item) ?: "🥬"
-                                Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .frostedGlassBackground()
+                                        .border(1.dp, Sage200, RoundedCornerShape(16.dp)),
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = Color.Transparent
+                                ) {
                                     Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text(matEmoji, fontSize = 15.sp)
                                         Spacer(Modifier.width(6.dp))
@@ -216,15 +246,34 @@ fun RecipeDetailScreen(
                     }
                 }
             }
+            }
         }
 
         // Action bar — sticky at bottom
         Surface(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), color = Color.Transparent) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Surface(onClick = { showDeleteConfirm = true }, modifier = Modifier.size(52.dp), shape = RoundedCornerShape(20.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                Surface(
+                    onClick = { showDeleteConfirm = true },
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(20.dp)),
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.Transparent
+                ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Delete, contentDescription = null, tint = Sage400, modifier = Modifier.size(22.dp)) }
                 }
-                Surface(onClick = { onEdit(recipe) }, modifier = Modifier.size(52.dp), shape = RoundedCornerShape(20.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                Surface(
+                    onClick = { onEdit(recipe) },
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(20.dp)),
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.Transparent
+                ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Edit, contentDescription = null, tint = Sage400, modifier = Modifier.size(22.dp)) }
                 }
                 Surface(onClick = onGoCook, modifier = Modifier.weight(1f).height(52.dp), shape = RoundedCornerShape(20.dp), color = DarkButton, shadowElevation = 4.dp) {

@@ -2,6 +2,7 @@ package com.example.solochef.ui.screens.ingredients
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -19,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -90,15 +92,15 @@ fun IngredientLibraryScreen(onBack: () -> Unit) {
 
     val lib = library
     if (lib == null) {
-        Box(Modifier.fillMaxSize().background(Sage100), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxSize().background(Color.Transparent), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = Sage400, strokeWidth = 2.dp)
         }
         return
     }
 
-    Column(Modifier.fillMaxSize().background(Sage100)) {
+    Column(Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
         // ─── Top Bar ───
-        Surface(Modifier.fillMaxWidth(), color = Sage100.copy(alpha = 0.95f)) {
+        Surface(Modifier.fillMaxWidth(), color = Color.Transparent) {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -117,7 +119,13 @@ fun IngredientLibraryScreen(onBack: () -> Unit) {
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).height(48.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .height(48.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(14.dp)),
             placeholder = {
                 Text("搜索食材...",
                     style = TextStyle(fontSize = 11.sp, lineHeight = 11.sp,
@@ -149,7 +157,6 @@ fun IngredientLibraryScreen(onBack: () -> Unit) {
                     .fillMaxHeight()
                     .background(Sage50)
                     .verticalScroll(rememberScrollState())
-                    .padding(vertical = 4.dp)
             ) {
                 categories.forEach { cat ->
                     val selected = cat.id == selectedCategoryId
@@ -158,7 +165,7 @@ fun IngredientLibraryScreen(onBack: () -> Unit) {
                             .fillMaxWidth()
                             .clickable { selectedCategoryId = cat.id }
                             .then(
-                                if (selected) Modifier.background(Color.White, RoundedCornerShape(12.dp))
+                                if (selected) Modifier.background(Color.White)
                                 else Modifier
                             )
                             .padding(horizontal = 6.dp, vertical = 6.dp),
@@ -206,9 +213,13 @@ fun IngredientLibraryScreen(onBack: () -> Unit) {
                             items(globalResults, key = { (ing, _) -> ing.id }) { (ingredient, cat) ->
                                 Surface(
                                     shape = RoundedCornerShape(16.dp),
-                                    color = Color.White,
-                                    modifier = Modifier.fillMaxWidth().clickable { selectedCategoryId = cat.id },
-                                    border = BorderStroke(1.dp, Sage100)
+                                    color = Color.Transparent,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .frostedGlassBackground()
+                                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                                        .clickable { selectedCategoryId = cat.id }
                                 ) {
                                     Column(
                                         Modifier.fillMaxWidth().padding(12.dp),
@@ -269,30 +280,42 @@ fun IngredientLibraryScreen(onBack: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     if (selectedCategory.id == FAVORITES_ID) {
                         // 常用食材: pick from other categories
-                        Button(
+                        Surface(
                             onClick = { showFavoritePicker = true },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .frostedGlassBackground()
+                                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                            color = Color.Transparent
                         ) {
-                            Icon(Icons.Default.Star, null, tint = Sage900, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("从分类添加食材", color = Sage900, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Star, null, tint = Sage900, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("从分类添加食材", color = Sage900, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     } else {
-                        Button(
+                        Surface(
                             onClick = {
                                 addingToCategoryId = selectedCategory.id
                                 newIngredientName = ""
                                 showAddDialog = true
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .frostedGlassBackground()
+                                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                            color = Color.Transparent
                         ) {
-                            Icon(Icons.Default.Star, null, tint = Sage900, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("添加食材", color = Sage900, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Star, null, tint = Sage900, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("添加食材", color = Sage900, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -348,8 +371,12 @@ fun IngredientLibraryScreen(onBack: () -> Unit) {
                         showAddDialog = false
                     },
                     shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = Sage800)
-                ) { Text("添加", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White) }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                ) { Text("添加", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900) }
             },
             dismissButton = {
                 TextButton(onClick = { showAddDialog = false }) { Text("取消", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage500) }
@@ -377,8 +404,12 @@ fun IngredientLibraryScreen(onBack: () -> Unit) {
                         ingredientToDelete = null
                     },
                     shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
-                ) { Text("删除", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White) }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                ) { Text("删除", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFEF4444)) }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false; ingredientToDelete = null }) {
@@ -463,19 +494,29 @@ fun IngredientLibraryScreen(onBack: () -> Unit) {
                 }
             }},
             confirmButton = {
-                TextButton(onClick = {
-                    if (pickedIds.isNotEmpty()) {
-                        val favCategory = categories.find { it.id == FAVORITES_ID } ?: return@TextButton
-                        val pickedItems = allIngredients
-                            .filter { (ing, _) -> ing.id in pickedIds }
-                            .map { (ing, _) -> IngredientItem(id = ing.id, name = ing.name, categoryId = FAVORITES_ID, isStandard = true) }
-                        val updated = lib.copy(categories = categories.map { cat ->
-                            if (cat.id == FAVORITES_ID) cat.copy(ingredients = favCategory.ingredients + pickedItems) else cat
-                        })
-                        saveAndRefresh(updated)
-                    }
-                    showFavoritePicker = false
-                }) { Text("添加选中的食材", color = Sage900) }
+                Surface(
+                    onClick = {
+                        if (pickedIds.isNotEmpty()) {
+                            val favCategory = categories.find { it.id == FAVORITES_ID } ?: return@Surface
+                            val pickedItems = allIngredients
+                                .filter { (ing, _) -> ing.id in pickedIds }
+                                .map { (ing, _) -> IngredientItem(id = ing.id, name = ing.name, categoryId = FAVORITES_ID, isStandard = true) }
+                            val updated = lib.copy(categories = categories.map { cat ->
+                                if (cat.id == FAVORITES_ID) cat.copy(ingredients = favCategory.ingredients + pickedItems) else cat
+                            })
+                            saveAndRefresh(updated)
+                        }
+                        showFavoritePicker = false
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.Transparent,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                ) {
+                    Text("添加选中的食材", Modifier.padding(horizontal = 16.dp, vertical = 12.dp), color = Sage900, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
             },
             dismissButton = {
                 TextButton(onClick = { showFavoritePicker = false }) { Text("取消", color = Sage400) }
@@ -493,9 +534,13 @@ private fun IngredientGridCard(
 ) {
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        border = BorderStroke(1.dp, Sage100)
+        color = Color.Transparent,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .frostedGlassBackground()
+            .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
     ) {
         Column(
             Modifier.fillMaxWidth().padding(12.dp),

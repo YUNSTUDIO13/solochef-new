@@ -52,11 +52,11 @@ fun FeaturedAllScreen(
         }.sortedByDescending { it.cooked_count }
     }
 
-    Column(Modifier.fillMaxSize().background(Sage100)) {
+    Column(Modifier.fillMaxSize().background(Color.Transparent)) {
         // Header with back button
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = Sage100.copy(alpha = 0.95f)
+            color = Color.Transparent
         ) {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
@@ -81,11 +81,21 @@ fun FeaturedAllScreen(
             categories.forEach { cat ->
                 val sel = cat == selectedCategory
                 val cnt = if (cat == "全部") recipes.count { it.is_featured } else (tagCounts[cat] ?: 0)
-                Surface(
-                    onClick = { selectedCategory = cat },
-                    shape = RoundedCornerShape(20),
-                    color = if (sel) Sage800 else Color.White,
-                    border = BorderStroke(1.dp, if (sel) Sage800 else Sage200)
+                val chipModifier = if (sel) {
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(Sage800)
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                } else {
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                }
+                Box(
+                    modifier = chipModifier
+                        .clickable { selectedCategory = cat },
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "$cat ($cnt)",

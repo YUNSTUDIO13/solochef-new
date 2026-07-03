@@ -46,21 +46,28 @@ fun PickingScreen(
     val allChecked = allKeys.isNotEmpty() && allKeys.all { it in checkedKeys }
     val totalCount = allMaterials.size
 
-    Box(Modifier.fillMaxSize().background(Sage100)) {
+    Box(Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).verticalScroll(rememberScrollState()).padding(bottom = 120.dp)) {
             Spacer(Modifier.height(24.dp))
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
                     Text("拣货确认", fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
-                    Text("Material Picking / BOM Check", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 8.dp))
                 }
                 TextButton(onClick = onCancel) { Text("取消", color = Sage500, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
             }
             Spacer(Modifier.height(24.dp))
 
             // Recipe header card
-            Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(32.dp))
+                    .frostedGlassBackground()
+                    .border(1.dp, Sage200, RoundedCornerShape(32.dp)),
+                shape = RoundedCornerShape(32.dp),
+                color = Color.Transparent
+            ) {
                 Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Surface(modifier = Modifier.size(56.dp), shape = RoundedCornerShape(16.dp), color = Sage100) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Inventory, contentDescription = null, tint = Sage900, modifier = Modifier.size(28.dp)) } }
                     Spacer(Modifier.width(16.dp))
@@ -74,7 +81,7 @@ fun PickingScreen(
             // BOM snapshot
             recipe.bom_snapshot?.let { snap ->
                 Spacer(Modifier.height(24.dp))
-                Box(Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(32.dp)).background(Color.White).border(1.dp, Sage200, RoundedCornerShape(32.dp))) {
+                Box(Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(32.dp)).background(Color.White).border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp))) {
                     AsyncImage(snap, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     Surface(modifier = Modifier.padding(16.dp), shape = RoundedCornerShape(50), color = Sage900.copy(0.8f)) {
                         Text("食材全家福", Modifier.padding(horizontal = 12.dp, vertical = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White)
@@ -103,10 +110,13 @@ fun PickingScreen(
                                 val isChecked = key in checkedKeys
                                 Surface(
                                     onClick = { checkedKeys = if (isChecked) checkedKeys - key else checkedKeys + key },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(24.dp))
+                                        .then(if (!isChecked) Modifier.frostedGlassBackground() else Modifier)
+                                        .border(1.dp, if (isChecked) Sage800 else Sage200, RoundedCornerShape(24.dp)),
                                     shape = RoundedCornerShape(24.dp),
-                                    color = if (isChecked) Sage800 else Color.White,
-                                    border = BorderStroke(1.dp, if (isChecked) Sage800 else Sage200)
+                                    color = if (isChecked) Sage800 else Color.Transparent
                                 ) {
                                     Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Box(Modifier.size(18.dp).border(2.dp, if (isChecked) Color.White else Sage200, RoundedCornerShape(5.dp)).background(if (isChecked) Color.White else Color.Transparent, RoundedCornerShape(5.dp)), contentAlignment = Alignment.Center) {
@@ -130,20 +140,28 @@ fun PickingScreen(
             }
         }
 
-        // Footer — full-width solid background
-        Surface(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(), color = Sage100, shadowElevation = 8.dp) {
-            Row(Modifier.padding(horizontal = 24.dp, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Footer — transparent background, no shadow
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (totalCount > 0) {
                     Surface(
                         onClick = { checkedKeys = if (allChecked) emptySet() else allKeys.toSet() },
-                        modifier = Modifier.size(80.dp),
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(32.dp))
+                            .frostedGlassBackground()
+                            .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
                         shape = RoundedCornerShape(32.dp),
-                        color = if (allChecked) Sage800 else Color.White,
-                        border = BorderStroke(1.dp, Sage200)
+                        color = Color.Transparent
                     ) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Box(Modifier.size(24.dp).border(2.dp, if (allChecked) Color.White else Sage300, RoundedCornerShape(6.dp)).background(if (allChecked) Color.White else Color.Transparent, RoundedCornerShape(6.dp)), contentAlignment = Alignment.Center) {
-                                if (allChecked) Icon(Icons.Default.Check, contentDescription = null, tint = Sage800, modifier = Modifier.size(14.dp))
+                            Box(Modifier.size(24.dp).border(2.dp, if (allChecked) Sage800 else Sage300, RoundedCornerShape(6.dp)).background(if (allChecked) Sage800 else Color.Transparent, RoundedCornerShape(6.dp)), contentAlignment = Alignment.Center) {
+                                if (allChecked) Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
                             }
                         }
                     }
@@ -151,14 +169,19 @@ fun PickingScreen(
                 Surface(
                     onClick = onConfirm,
                     enabled = allChecked || totalCount == 0,
-                    modifier = Modifier.weight(1f).height(80.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(80.dp)
+                        .clip(RoundedCornerShape(32.dp))
+                        .frostedGlassBackground()
+                        .border(1.dp, Sage200, RoundedCornerShape(32.dp)),
                     shape = RoundedCornerShape(32.dp),
-                    color = if (allChecked || totalCount == 0) Sage800 else Sage200
+                    color = Color.Transparent
                 ) {
                     Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        Text("确认物料并开火", fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (allChecked || totalCount == 0) Color.White else Sage400)
+                        Text("确认物料并开火", fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (allChecked || totalCount == 0) Sage800 else Sage400)
                         Spacer(Modifier.width(12.dp))
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = if (allChecked || totalCount == 0) Color.White else Sage400, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = if (allChecked || totalCount == 0) Sage800 else Sage400, modifier = Modifier.size(24.dp))
                     }
                 }
             }

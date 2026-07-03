@@ -6,6 +6,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -34,10 +35,12 @@ import com.example.solochef.ui.screens.library.*
 import com.example.solochef.ui.screens.ingredients.IngredientSelectorSheet
 import com.example.solochef.model.IngredientItem
 import com.example.solochef.ui.theme.*
+import com.example.solochef.storage.LocalFileManager
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -65,7 +68,14 @@ fun CreateRecipeScreen(
     }
     val timeline = remember { mutableStateOf(existingRecipe?.timeline?.toMutableList() ?: mutableListOf()) }
     val tags = remember { mutableStateOf((existingRecipe?.tags ?: emptyList()).toMutableList()) }
-    val customTag = remember { mutableStateOf("") }
+    val customTags = remember { mutableStateOf(CustomRecipeTags()) }
+    val allRecipes = remember { mutableStateOf<List<Recipe>>(emptyList()) }
+    var showAddCategoryDialog by remember { mutableStateOf(false) }
+    var showDeleteTagDialog by remember { mutableStateOf(false) }
+    var tagToDelete by remember { mutableStateOf<CustomTag?>(null) }
+    var deleteTagIsProcess by remember { mutableStateOf(false) }
+    var newCategoryName by remember { mutableStateOf("") }
+    var addingToProcess by remember { mutableStateOf(true) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -81,8 +91,13 @@ fun CreateRecipeScreen(
     var ingredientLibrary by remember { mutableStateOf<IngredientLibrary?>(null) }
 
     // Pre-load ingredient library for category lookup
-    val localStg = remember { com.example.solochef.storage.LocalFileManager(context) }
+    val localStg = remember { LocalFileManager(context) }
     LaunchedEffect(Unit) { ingredientLibrary = localStg.getIngredientLibrary() }
+    LaunchedEffect(Unit) {
+        val tags = localStg.getCustomRecipeTags()
+        customTags.value = tags
+        allRecipes.value = localStg.getAllRecipes()
+    }
 
     // ── Material helpers ──
     fun addMaterial(cat: String) {
@@ -184,7 +199,7 @@ fun CreateRecipeScreen(
     }
 
     // ── UI matching Web pixel-for-pixel ──
-    Column(Modifier.fillMaxSize().background(Sage100)) {
+    Column(Modifier.fillMaxSize().background(Color.Transparent)) {
         // Header
         Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(if (existingRecipe != null) "编辑菜谱" else "新建菜谱", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Sage900)
@@ -195,7 +210,7 @@ fun CreateRecipeScreen(
             // ── Cover Image (Web: section > label > div.relative) ──
             Text("成品封面图 (Required)", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
             Spacer(Modifier.height(12.dp))
-            Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(40.dp)).border(2.dp, Sage200, RoundedCornerShape(40.dp)).background(Color.White).clickable { imageTarget = "cover"; coverLoading = true; pickLauncher.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(40.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(40.dp)).clickable { imageTarget = "cover"; coverLoading = true; pickLauncher.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) {
                 if (coverLoading) {
                     CircularProgressIndicator(Modifier.size(36.dp), strokeWidth = 3.dp, color = Sage800)
                 } else if (cover.isNotEmpty()) {
@@ -219,7 +234,25 @@ fun CreateRecipeScreen(
 
             // ── Basic Info (Web: section.space-y-4) ──
             Text("菜谱名称", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
-            OutlinedTextField(name.value, { name.value = it }, Modifier.fillMaxWidth().padding(top = 4.dp), placeholder = { Text("例如：红烧肉", color = Sage300) }, singleLine = true, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage400, unfocusedBorderColor = Sage200, focusedContainerColor = Color.White, unfocusedContainerColor = Color.White), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Black, color = Sage900))
+            OutlinedTextField(
+                value = name.value,
+                onValueChange = { name.value = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .frostedGlassBackground(),
+                placeholder = { Text("例如：红烧肉", color = Sage300) },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
+                ),
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Black, color = Sage900)
+            )
             Spacer(Modifier.height(12.dp))
 
             // Energy + Featured (Web: grid grid-cols-2)
@@ -227,13 +260,13 @@ fun CreateRecipeScreen(
                 Column(Modifier.weight(1f)) {
                     Text("精力等级", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
                     var eExpanded by remember { mutableStateOf(false) }
-                    Box { Surface(onClick = { eExpanded = true }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), shape = RoundedCornerShape(16.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Text(ENERGY_LEVEL_OPTIONS.find { it.first == energy.value }?.second ?: "正常", Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage900); Icon(Icons.Default.ArrowDropDown, null, tint = Sage400, modifier = Modifier.size(20.dp)) } }
+                    Box { Surface(onClick = { eExpanded = true }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(16.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)), shape = RoundedCornerShape(16.dp), color = Color.Transparent) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Text(ENERGY_LEVEL_OPTIONS.find { it.first == energy.value }?.second ?: "正常", Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage900); Icon(Icons.Default.ArrowDropDown, null, tint = Sage400, modifier = Modifier.size(20.dp)) } }
                         DropdownMenu(eExpanded, { eExpanded = false }) { ENERGY_LEVEL_OPTIONS.forEach { (l, lbl) -> DropdownMenuItem(text = { Text(lbl, fontWeight = FontWeight.Bold) }, onClick = { energy.value = l; eExpanded = false }) } }
                     }
                 }
                 Column(Modifier.weight(1f)) {
                     Text("主厨力荐", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
-                    Surface(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), shape = RoundedCornerShape(16.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                    Surface(modifier = Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(16.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)), shape = RoundedCornerShape(16.dp), color = Color.Transparent) {
                         Row(Modifier.padding(4.dp)) {
                             Surface(onClick = { featured.value = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = if (featured.value) Sage800 else Color.Transparent) { Text("是 (Yes)", modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (featured.value) Color.White else Sage400) }
                             Surface(onClick = { featured.value = false }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = if (!featured.value) Sage800 else Color.Transparent) { Text("否 (No)", modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (!featured.value) Color.White else Sage400) }
@@ -247,11 +280,47 @@ fun CreateRecipeScreen(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column(Modifier.weight(1f)) {
                     Text("成本（元）", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
-                    OutlinedTextField(cost.value, { cost.value = it }, Modifier.fillMaxWidth().padding(top = 4.dp), placeholder = { Text("例：5", color = Sage300) }, singleLine = true, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage400, unfocusedBorderColor = Sage200, focusedContainerColor = Color.White, unfocusedContainerColor = Color.White), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900))
+                    OutlinedTextField(
+                        value = cost.value,
+                        onValueChange = { cost.value = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .frostedGlassBackground(),
+                        placeholder = { Text("例：5", color = Sage300) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
+                        ),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900)
+                    )
                 }
                 Column(Modifier.weight(1f)) {
                     Text("售价（元）", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
-                    OutlinedTextField(price.value, { price.value = it }, Modifier.fillMaxWidth().padding(top = 4.dp), placeholder = { Text("例：10", color = Sage300) }, singleLine = true, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage400, unfocusedBorderColor = Sage200, focusedContainerColor = Color.White, unfocusedContainerColor = Color.White), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900))
+                    OutlinedTextField(
+                        value = price.value,
+                        onValueChange = { price.value = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .frostedGlassBackground(),
+                        placeholder = { Text("例：10", color = Sage300) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
+                        ),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900)
+                    )
                 }
             }
             Spacer(Modifier.height(20.dp))
@@ -259,16 +328,64 @@ fun CreateRecipeScreen(
             // ── Tags (Web: white card inside basic-info section) ──
             Text("分类标签 (Tags)", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
             Spacer(Modifier.height(8.dp))
-            Surface(Modifier.fillMaxWidth(), RoundedCornerShape(32.dp), Color.White, border = BorderStroke(1.dp, Sage200)) {
+            Surface(Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)), RoundedCornerShape(32.dp), Color.Transparent) {
                 Column(Modifier.padding(16.dp)) {
                     Text("烹饪工艺", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
                     Spacer(Modifier.height(8.dp))
                     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         COOKING_PROCESS_TAGS.forEach { tag ->
                             val sel = tag in tags.value
-                            Surface(onClick = { tags.value = (tags.value.filter { it !in COOKING_PROCESS_TAGS } + tag).toMutableList() }, shape = RoundedCornerShape(50), color = if (sel) Sage800 else Sage50) {
+                            Surface(
+                                onClick = { tags.value = (tags.value.filter { it !in COOKING_PROCESS_TAGS && it !in customTags.value.cookingProcessTags.map { ct -> ct.name } } + tag).toMutableList() },
+                                shape = RoundedCornerShape(50),
+                                color = if (sel) Sage800 else Color.Transparent,
+                                modifier = if (sel) Modifier else Modifier.clip(RoundedCornerShape(50)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                            ) {
                                 Text(tag, Modifier.padding(horizontal = 10.dp, vertical = 5.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (sel) Color.White else Sage500)
                             }
+                        }
+                        customTags.value.cookingProcessTags.forEach { ct ->
+                            val sel = ct.name in tags.value
+                            val isAssociated = allRecipes.value.any { it.tags.contains(ct.name) }
+                            Surface(
+                                onClick = { tags.value = (tags.value.filter { it !in COOKING_PROCESS_TAGS && it !in customTags.value.cookingProcessTags.map { c -> c.name } } + ct.name).toMutableList() },
+                                shape = RoundedCornerShape(50),
+                                color = if (sel) Sage800 else Color.Transparent,
+                                modifier = if (sel) Modifier else Modifier.clip(RoundedCornerShape(50)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                ) {
+                                    Text(ct.name, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (sel) Color.White else Sage500)
+                                    if (!isAssociated) {
+                                        Spacer(Modifier.width(4.dp))
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "删除",
+                                            modifier = Modifier
+                                                .size(12.dp)
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) {
+                                                    tagToDelete = ct
+                                                    deleteTagIsProcess = true
+                                                    showDeleteTagDialog = true
+                                                },
+                                            tint = if (sel) Color.White.copy(0.8f) else Sage500
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Surface(
+                            onClick = { addingToProcess = true; newCategoryName = ""; showAddCategoryDialog = true },
+                            shape = RoundedCornerShape(50),
+                            color = Color.Transparent,
+                            modifier = Modifier.clip(RoundedCornerShape(50)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                        ) {
+                            Text("＋ 添加分类", Modifier.padding(horizontal = 10.dp, vertical = 5.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Sage400)
                         }
                     }
                     Spacer(Modifier.height(10.dp))
@@ -277,18 +394,57 @@ fun CreateRecipeScreen(
                     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         CUISINE_TAGS.forEach { tag ->
                             val sel = tag in tags.value
-                            Surface(onClick = { tags.value = (tags.value.filter { it !in CUISINE_TAGS } + tag).toMutableList() }, shape = RoundedCornerShape(50), color = if (sel) Sage800 else Sage50) {
+                            Surface(
+                                onClick = { tags.value = (tags.value.filter { it !in CUISINE_TAGS && it !in customTags.value.cuisineTags.map { ct -> ct.name } } + tag).toMutableList() },
+                                shape = RoundedCornerShape(50),
+                                color = if (sel) Sage800 else Color.Transparent,
+                                modifier = if (sel) Modifier else Modifier.clip(RoundedCornerShape(50)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                            ) {
                                 Text(tag, Modifier.padding(horizontal = 10.dp, vertical = 5.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (sel) Color.White else Sage500)
                             }
                         }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Text("自选 / 其它", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
-                    Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(customTag.value, { customTag.value = it }, Modifier.weight(1f), placeholder = { Text("输入自定义标签...", color = Sage300) }, singleLine = true, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage400, unfocusedBorderColor = Sage100, focusedContainerColor = Sage50, unfocusedContainerColor = Sage50), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Sage900))
-                        Spacer(Modifier.width(8.dp))
-                        Surface(onClick = { val t = customTag.value.trim(); if (t.isNotEmpty() && t !in tags.value) { tags.value = tags.value.toMutableList().apply { add(t) }; customTag.value = "" } }, shape = RoundedCornerShape(12.dp), color = Sage800) {
-                            Text("添加", Modifier.padding(horizontal = 16.dp, vertical = 10.dp), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        customTags.value.cuisineTags.forEach { ct ->
+                            val sel = ct.name in tags.value
+                            val isAssociated = allRecipes.value.any { it.tags.contains(ct.name) }
+                            Surface(
+                                onClick = { tags.value = (tags.value.filter { it !in CUISINE_TAGS && it !in customTags.value.cuisineTags.map { c -> c.name } } + ct.name).toMutableList() },
+                                shape = RoundedCornerShape(50),
+                                color = if (sel) Sage800 else Color.Transparent,
+                                modifier = if (sel) Modifier else Modifier.clip(RoundedCornerShape(50)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                ) {
+                                    Text(ct.name, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (sel) Color.White else Sage500)
+                                    if (!isAssociated) {
+                                        Spacer(Modifier.width(4.dp))
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "删除",
+                                            modifier = Modifier
+                                                .size(12.dp)
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) {
+                                                    tagToDelete = ct
+                                                    deleteTagIsProcess = false
+                                                    showDeleteTagDialog = true
+                                                },
+                                            tint = if (sel) Color.White.copy(0.8f) else Sage500
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Surface(
+                            onClick = { addingToProcess = false; newCategoryName = ""; showAddCategoryDialog = true },
+                            shape = RoundedCornerShape(50),
+                            color = Color.Transparent,
+                            modifier = Modifier.clip(RoundedCornerShape(50)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                        ) {
+                            Text("＋ 添加分类", Modifier.padding(horizontal = 10.dp, vertical = 5.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Sage400)
                         }
                     }
                 }
@@ -302,18 +458,22 @@ fun CreateRecipeScreen(
             // Unified "从食材库选择" button
             Surface(
                 onClick = { showIngredientSelector = true },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .frostedGlassBackground()
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
                 shape = RoundedCornerShape(16.dp),
-                color = Sage800
+                color = Color.Transparent
             ) {
                 Row(
                     Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.Add, null, tint = Sage900, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("从食材库选择", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White)
+                    Text("从食材库选择", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
                 }
             }
 
@@ -332,7 +492,7 @@ fun CreateRecipeScreen(
                         else -> cat
                     }
                     val catIdx = materials.value[cat]?.indexOf(mat) ?: 0
-                    Surface(Modifier.fillMaxWidth().padding(vertical = 2.dp), RoundedCornerShape(28.dp), Color.White, border = BorderStroke(1.dp, Sage200)) {
+                    Surface(Modifier.fillMaxWidth().padding(vertical = 2.dp).clip(RoundedCornerShape(28.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(28.dp)), RoundedCornerShape(28.dp), Color.Transparent) {
                         Column(Modifier.padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)) {
                             Text(catLabel, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = Sage400)
                             Spacer(Modifier.height(2.dp))
@@ -342,7 +502,12 @@ fun CreateRecipeScreen(
                                 Text("数量", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Sage500)
                                 Spacer(Modifier.width(6.dp))
                                 Box(
-                                    modifier = Modifier.width(64.dp).background(Color.White, RoundedCornerShape(12.dp)).border(1.dp, Sage100, RoundedCornerShape(12.dp)).padding(vertical = 6.dp),
+                                    modifier = Modifier
+                                        .width(64.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .frostedGlassBackground()
+                                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                        .padding(vertical = 6.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     BasicTextField(
@@ -365,8 +530,11 @@ fun CreateRecipeScreen(
                                 Surface(
                                     onClick = { showUnitDialog = true },
                                     shape = RoundedCornerShape(12.dp),
-                                    color = Color.White,
-                                    border = BorderStroke(1.dp, Sage100)
+                                    color = Color.Transparent,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .frostedGlassBackground()
+                                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 ) {
                                     Text(curUnit, Modifier.padding(horizontal = 10.dp, vertical = 6.dp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage900)
                                 }
@@ -412,18 +580,22 @@ fun CreateRecipeScreen(
                 // "从食材库选择" button to add more
                 Surface(
                     onClick = { showIngredientSelector = true },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
                     shape = RoundedCornerShape(16.dp),
-                    color = Sage800
+                    color = Color.Transparent
                 ) {
                     Row(
                         Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.Add, null, tint = Sage900, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("继续添加食材", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White)
+                        Text("继续添加食材", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
                     }
                 }
             }
@@ -435,7 +607,7 @@ fun CreateRecipeScreen(
             Spacer(Modifier.height(8.dp))
 
             timeline.value.forEachIndexed { _, step ->
-                Surface(Modifier.fillMaxWidth().padding(bottom = 16.dp), RoundedCornerShape(40.dp), Color.White, border = BorderStroke(1.dp, Sage200)) {
+                Surface(Modifier.fillMaxWidth().padding(bottom = 16.dp).clip(RoundedCornerShape(40.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(40.dp)), RoundedCornerShape(40.dp), Color.Transparent) {
                     Column(Modifier.padding(20.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -456,13 +628,48 @@ fun CreateRecipeScreen(
                         }
                         Spacer(Modifier.height(16.dp))
                         Box(Modifier.fillMaxWidth()) {
-                            OutlinedTextField(step.content, { updateStep(step.step_id, step.copy(content = it)) }, Modifier.fillMaxWidth(), placeholder = { Text("步骤描述...", color = Sage300, fontSize = 14.sp) }, singleLine = false, maxLines = 4, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage100, unfocusedBorderColor = Sage100, focusedContainerColor = Sage50, unfocusedContainerColor = Sage50), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900))
+                            OutlinedTextField(
+                                value = step.content,
+                                onValueChange = { updateStep(step.step_id, step.copy(content = it)) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .frostedGlassBackground(),
+                                placeholder = { Text("步骤描述...", color = Sage300, fontSize = 14.sp) },
+                                singleLine = false,
+                                maxLines = 4,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent
+                                ),
+                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Sage900)
+                            )
                         }
                         Spacer(Modifier.height(6.dp))
-                        OutlinedTextField(if (step.duration > 0) "${step.duration / 60}" else "", {
-                            val v = it.toIntOrNull() ?: 0
-                            updateStep(step.step_id, step.copy(duration = v * 60))
-                        }, Modifier.width(96.dp), placeholder = { Text("Min", color = Sage400) }, singleLine = true, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage100, unfocusedBorderColor = Sage100, focusedContainerColor = Sage50, unfocusedContainerColor = Sage50), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center))
+                        OutlinedTextField(
+                            value = if (step.duration > 0) "${step.duration / 60}" else "",
+                            onValueChange = {
+                                val v = it.toIntOrNull() ?: 0
+                                updateStep(step.step_id, step.copy(duration = v * 60))
+                            },
+                            modifier = Modifier
+                                .width(96.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .frostedGlassBackground(),
+                            placeholder = { Text("Min", color = Sage400) },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            ),
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center)
+                        )
 
                         // Step images (Web: 步骤图解)
                         Spacer(Modifier.height(10.dp))
@@ -471,7 +678,7 @@ fun CreateRecipeScreen(
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             // Upload placeholder (always last)
                             item {
-                                Box(Modifier.width(120.dp).height(96.dp).clip(RoundedCornerShape(16.dp)).border(2.dp, Sage100, RoundedCornerShape(16.dp)).background(Sage50).clickable { imageTarget = "step"; stepImageId = step.step_id; pickLauncher.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) {
+                                Box(Modifier.width(120.dp).height(96.dp).clip(RoundedCornerShape(16.dp)).border(2.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)).frostedGlassBackground().clickable { imageTarget = "step"; stepImageId = step.step_id; pickLauncher.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Icon(Icons.Default.CameraAlt, null, tint = Sage300, modifier = Modifier.size(24.dp))
                                         Text("上传图解", fontSize = 8.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = if (step.images?.isEmpty() != false) Sage500 else Sage300)
@@ -502,10 +709,26 @@ fun CreateRecipeScreen(
                             }
                             Spacer(Modifier.height(8.dp))
                             (step.sub_tasks ?: emptyList()).forEachIndexed { subIdx, sub ->
-                                Column(Modifier.fillMaxWidth().padding(bottom = 6.dp).clip(RoundedCornerShape(16.dp)).background(Sage50).padding(horizontal = 8.dp, vertical = 4.dp)) {
+                                Column(Modifier.fillMaxWidth().padding(bottom = 6.dp).clip(RoundedCornerShape(16.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)).padding(horizontal = 8.dp, vertical = 4.dp)) {
                                     OutlinedTextField(sub.content, { updateSubTask(step.step_id, subIdx, sub.copy(content = it)) }, Modifier.fillMaxWidth(), placeholder = { Text("子任务...", color = Sage300) }, singleLine = false, shape = RoundedCornerShape(0.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent, focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Sage900))
                                     Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        OutlinedTextField(if (sub.duration > 0) "${sub.duration / 60}" else "", { updateSubTask(step.step_id, subIdx, sub.copy(duration = (it.toIntOrNull() ?: 0) * 60)) }, Modifier.width(72.dp), singleLine = true, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage100, unfocusedBorderColor = Sage100, focusedContainerColor = Color.White, unfocusedContainerColor = Color.White), textStyle = androidx.compose.ui.text.TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center))
+                                        OutlinedTextField(
+                                            value = if (sub.duration > 0) "${sub.duration / 60}" else "",
+                                            onValueChange = { updateSubTask(step.step_id, subIdx, sub.copy(duration = (it.toIntOrNull() ?: 0) * 60)) },
+                                            modifier = Modifier
+                                                .width(72.dp)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .frostedGlassBackground(),
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                                                unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                                                focusedContainerColor = Color.Transparent,
+                                                unfocusedContainerColor = Color.Transparent
+                                            ),
+                                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Black, color = Sage900, textAlign = TextAlign.Center)
+                                        )
                                         IconButton(onClick = { removeSubTask(step.step_id, subIdx) }, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Delete, null, tint = Sage300, modifier = Modifier.size(14.dp)) }
                                     }
                                 }
@@ -515,11 +738,20 @@ fun CreateRecipeScreen(
                 }
             }
             Spacer(Modifier.height(6.dp))
-            Surface(onClick = { addStep() }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = Sage800) {
+            Surface(
+                onClick = { addStep() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .frostedGlassBackground()
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.Transparent
+            ) {
                 Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.Add, null, tint = Sage900, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("添加步骤", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White)
+                    Text("添加步骤", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
                 }
             }
         }
@@ -546,14 +778,19 @@ fun CreateRecipeScreen(
                     ))
                 },
                 enabled = name.value.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(80.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .frostedGlassBackground()
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
                 shape = RoundedCornerShape(32.dp),
-                color = if (name.value.isNotBlank()) Color.Black else Color.Black.copy(0.2f)
+                color = Color.Transparent
             ) {
                 Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                    Icon(Icons.Default.Save, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.Save, null, tint = Sage900, modifier = Modifier.size(28.dp))
                     Spacer(Modifier.width(12.dp))
-                    Text("保存发布菜谱", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text("保存发布菜谱", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Sage900)
                 }
             }
         }
@@ -574,6 +811,101 @@ fun CreateRecipeScreen(
                         existing.add(m)
                         materials.value = materials.value.toMutableMap().also { it[targetCat] = existing }
                     }
+                }
+            }
+        )
+    }
+
+    // ── 添加分类 Dialog ──
+    if (showAddCategoryDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddCategoryDialog = false },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(28.dp),
+            title = { Text("添加分类", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900) },
+            text = {
+                OutlinedTextField(
+                    value = newCategoryName,
+                    onValueChange = { newCategoryName = it },
+                    placeholder = { Text("分类名称", color = Sage300, fontSize = 13.sp) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp, color = Sage900),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Sage400,
+                        unfocusedBorderColor = Sage200,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val name = newCategoryName.trim()
+                        if (name.isNotEmpty()) {
+                            val newTag = CustomTag(id = UUID.randomUUID().toString(), name = name)
+                            val updated = if (addingToProcess) {
+                                customTags.value.copy(cookingProcessTags = customTags.value.cookingProcessTags + newTag)
+                            } else {
+                                customTags.value.copy(cuisineTags = customTags.value.cuisineTags + newTag)
+                            }
+                            scope.launch { localStg.saveCustomRecipeTags(updated) }
+                            customTags.value = updated
+                            // Also add the new tag to the recipe's tags
+                            tags.value = tags.value.toMutableList().apply { add(name) }
+                        }
+                        showAddCategoryDialog = false
+                    },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                ) { Text("添加", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddCategoryDialog = false }) {
+                    Text("取消", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage500)
+                }
+            }
+        )
+    }
+    // ── 删除分类 Dialog ──
+    if (showDeleteTagDialog && tagToDelete != null) {
+        val ct = tagToDelete!!
+        AlertDialog(
+            onDismissRequest = { showDeleteTagDialog = false; tagToDelete = null },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(28.dp),
+            title = { Text("请确认是否删除？", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val updated = if (deleteTagIsProcess) {
+                            customTags.value.copy(cookingProcessTags = customTags.value.cookingProcessTags.filter { it.id != ct.id })
+                        } else {
+                            customTags.value.copy(cuisineTags = customTags.value.cuisineTags.filter { it.id != ct.id })
+                        }
+                        scope.launch { localStg.saveCustomRecipeTags(updated) }
+                        customTags.value = updated
+                        tags.value = tags.value.toMutableList().apply { remove(ct.name) }
+                        showDeleteTagDialog = false
+                        tagToDelete = null
+                    },
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .frostedGlassBackground()
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50))
+                ) { Text("确认", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteTagDialog = false; tagToDelete = null }) {
+                    Text("取消", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage500)
                 }
             }
         )

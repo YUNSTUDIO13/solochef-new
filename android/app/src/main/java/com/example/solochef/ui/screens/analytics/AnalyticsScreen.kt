@@ -14,6 +14,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,13 +42,21 @@ fun AnalyticsScreen(
             .take(10)
     }
 
-    Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 100.dp)) {
+    Column(Modifier.fillMaxSize().background(Color.Transparent).verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 100.dp)) {
         Text("食光日历", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Color(0xFF2D4A3A))
         Text("时间长河里的烟火气", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 4.dp))
         Spacer(Modifier.height(8.dp))
 
         // ─── 食光日历 ───
-        Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
+            shape = RoundedCornerShape(32.dp),
+            color = Color.Transparent
+        ) {
             Column(Modifier.padding(20.dp)) {
                 FoodCalendar(
                     records = cookingRecords,
@@ -62,7 +72,15 @@ fun AnalyticsScreen(
         Spacer(Modifier.height(12.dp))
 
         // ─── 锅气榜 TOP10 ───
-        Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
+            shape = RoundedCornerShape(32.dp),
+            color = Color.Transparent
+        ) {
             Column(Modifier.padding(24.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -88,9 +106,6 @@ fun AnalyticsScreen(
                 } else {
                     topWokHeats.forEachIndexed { i, recipe ->
                         WokHeatRow(rank = i + 1, recipe = recipe)
-                        if (i < topWokHeats.size - 1) {
-                            HorizontalDivider(color = Sage50, modifier = Modifier.padding(vertical = 4.dp))
-                        }
                     }
                 }
             }
@@ -106,13 +121,23 @@ private fun WokHeatRow(rank: Int, recipe: Recipe) {
         1 -> Color(0xFFFFD700)
         2 -> Color(0xFFC0C0C0)
         3 -> Color(0xFFCD7F32)
-        else -> Sage200
+        else -> Sage800
     }
 
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .frostedGlassBackground()
+            .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent
+    ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -122,7 +147,7 @@ private fun WokHeatRow(rank: Int, recipe: Recipe) {
                 .background(accentColor.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
-            Text("${rank}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = accentColor)
+            Text("${rank}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = accentColor, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
         }
 
         Spacer(Modifier.width(12.dp))
@@ -154,6 +179,7 @@ private fun WokHeatRow(rank: Int, recipe: Recipe) {
         )
 
         FlameBadge(count = recipe.cooked_count)
+    }
     }
 }
 

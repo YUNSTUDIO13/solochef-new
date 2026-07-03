@@ -60,8 +60,8 @@ fun BatchDetailScreen(
         agg
     }
 
-    Column(Modifier.fillMaxSize().background(Sage50)) {
-        Surface(modifier = Modifier.fillMaxWidth().background(Sage50.copy(0.8f)).border(1.dp, Sage200), color = Color.Transparent) {
+    Column(Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
+        Surface(modifier = Modifier.fillMaxWidth(), color = Color.Transparent) {
             Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Close, contentDescription = null, tint = Sage400, modifier = Modifier.size(22.dp)) }
                 Column(Modifier.weight(1f).padding(start = 4.dp)) {
@@ -87,11 +87,18 @@ fun BatchDetailScreen(
 
             when (batch.status) {
                 BatchStatus.Picking -> {
-                    Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(32.dp))
+                            .border(1.dp, Sage200, RoundedCornerShape(32.dp)),
+                        shape = RoundedCornerShape(32.dp),
+                        color = Color.White
+                    ) {
                         Row(Modifier.padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Surface(modifier = Modifier.size(64.dp), shape = RoundedCornerShape(16.dp), color = Sage100) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.ShoppingBasket, contentDescription = null, tint = Sage900, modifier = Modifier.size(32.dp)) } }
+                            Surface(modifier = Modifier.size(64.dp), shape = RoundedCornerShape(16.dp), color = Sage800) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.ShoppingBasket, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp)) } }
                             Spacer(Modifier.width(16.dp))
-                            Column { Text("批量采购清单 (Batch BOM)", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900); Text("系统已按分区自动去重合并食材清单", fontSize = 12.sp, color = Sage500) }
+                            Column { Text("批量采购清单", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900); Text("系统已按分区自动去重合并食材清单", fontSize = 12.sp, color = Sage500) }
                         }
                     }
                     Spacer(Modifier.height(24.dp))
@@ -108,12 +115,17 @@ fun BatchDetailScreen(
                             val checked = m.item in checkedMaterials
                             Surface(
                                 onClick = { checkedMaterials = if (checked) checkedMaterials - m.item else checkedMaterials + m.item },
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clip(RoundedCornerShape(28.dp))
+                                    .frostedGlassBackground()
+                                    .border(1.dp, Sage200, RoundedCornerShape(28.dp)),
                                 shape = RoundedCornerShape(28.dp),
-                                border = BorderStroke(1.dp, Sage200)
+                                color = Color.Transparent
                             ) {
                                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(modifier = Modifier.size(40.dp), shape = RoundedCornerShape(12.dp), color = if (checked) Color(0xFF10B981) else Color.Transparent) {
+                                    Surface(modifier = Modifier.size(40.dp), shape = RoundedCornerShape(12.dp), color = if (checked) Color(0xFF10B981) else Color.Transparent, border = BorderStroke(1.dp, if (checked) Color(0xFF10B981) else Sage200)) {
                                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                             if (checked) Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                                             else Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Sage300, modifier = Modifier.size(16.dp))
@@ -128,23 +140,46 @@ fun BatchDetailScreen(
                         }
                     }
                     Spacer(Modifier.height(24.dp))
-                    Surface(onClick = { onUpdateStatus(batch.id, BatchStatus.Processing) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(32.dp), color = Sage900) {
-                        Text("采购完成 (Confirm)", Modifier.fillMaxWidth().padding(24.dp), textAlign = TextAlign.Center, fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Surface(
+                        onClick = { onUpdateStatus(batch.id, BatchStatus.Processing) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(32.dp))
+                            .border(2.dp, Sage800, RoundedCornerShape(32.dp)),
+                        shape = RoundedCornerShape(32.dp),
+                        color = Color.White
+                    ) {
+                        Text("采购完成", Modifier.fillMaxWidth().padding(24.dp), textAlign = TextAlign.Center, fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage800)
                     }
                 }
 
                 BatchStatus.Processing -> {
-                    Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(32.dp))
+                            .border(1.dp, Sage200, RoundedCornerShape(32.dp)),
+                        shape = RoundedCornerShape(32.dp),
+                        color = Color.White
+                    ) {
                         Row(Modifier.padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
                             Surface(modifier = Modifier.size(64.dp), shape = RoundedCornerShape(16.dp), color = Sage800) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.Restaurant, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp)) } }
                             Spacer(Modifier.width(16.dp))
-                            Column { Text("今日待做 (Cook)", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900); Text("点击进入标准图解或一键快速完成", fontSize = 12.sp, color = Sage500) }
+                            Column { Text("今日待做", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900); Text("点击进入标准图解或一键快速完成", fontSize = 12.sp, color = Sage500) }
                         }
                     }
                     Spacer(Modifier.height(24.dp))
                     batchRecipes.forEach { recipe ->
                         val isDone = recipe.id in batch.completedRecipeIds
-                        Surface(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clip(RoundedCornerShape(32.dp))
+                                .border(1.dp, Sage200, RoundedCornerShape(32.dp)),
+                            shape = RoundedCornerShape(32.dp),
+                            color = Color.White
+                        ) {
                             Row {
                                 // Image: w-32 (128dp), aspect-square, shrink-0 (matches Web)
                                 Box(modifier = Modifier.size(128.dp).clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))) {
@@ -164,19 +199,43 @@ fun BatchDetailScreen(
                                     }
                                     if (!isDone) {
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Surface(onClick = { onOpenSOP(recipe) }, modifier = Modifier.weight(1f).height(32.dp), shape = RoundedCornerShape(12.dp), color = Sage800) {
+                                            Surface(
+                                                onClick = { onOpenSOP(recipe) },
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(32.dp)
+                                                    .clip(RoundedCornerShape(12.dp)),
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = Sage800
+                                            ) {
                                                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                                                     Text("开始加工", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Color.White)
                                                     Spacer(Modifier.width(4.dp))
                                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
                                                 }
                                             }
-                                            Surface(onClick = { onCompleteRecipe(recipe.id) }, modifier = Modifier.width(48.dp).height(32.dp), shape = RoundedCornerShape(12.dp), color = Sage100) {
+                                            Surface(
+                                                onClick = { onCompleteRecipe(recipe.id) },
+                                                modifier = Modifier
+                                                    .width(48.dp)
+                                                    .height(32.dp)
+                                                    .clip(RoundedCornerShape(12.dp)),
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = Color.White,
+                                                border = BorderStroke(1.dp, Sage200)
+                                            ) {
                                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Sage500, modifier = Modifier.size(18.dp)) }
                                             }
                                         }
                                     } else {
-                                        Surface(modifier = Modifier.fillMaxWidth().height(32.dp), shape = RoundedCornerShape(12.dp), color = Color(0xFFECFDF5)) {
+                                        Surface(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(32.dp)
+                                                .clip(RoundedCornerShape(12.dp)),
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = Color(0xFFECFDF5)
+                                        ) {
                                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("制作完成", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFF10B981)) }
                                         }
                                     }
@@ -185,8 +244,16 @@ fun BatchDetailScreen(
                         }
                     }
                     Spacer(Modifier.height(24.dp))
-                    Surface(onClick = { onUpdateStatus(batch.id, BatchStatus.Finished) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(2.dp, Sage800)) {
-                        Text("一键归档所有 (Finish All)", Modifier.fillMaxWidth().padding(24.dp), textAlign = TextAlign.Center, fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage800)
+                    Surface(
+                        onClick = { onUpdateStatus(batch.id, BatchStatus.Finished) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(32.dp))
+                            .border(2.dp, Sage800, RoundedCornerShape(32.dp)),
+                        shape = RoundedCornerShape(32.dp),
+                        color = Color.White
+                    ) {
+                        Text("一键归档所有", Modifier.fillMaxWidth().padding(24.dp), textAlign = TextAlign.Center, fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage800)
                     }
                 }
 

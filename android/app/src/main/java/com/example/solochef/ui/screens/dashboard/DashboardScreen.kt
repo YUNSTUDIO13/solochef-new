@@ -86,7 +86,7 @@ fun DashboardScreen(
             .sortedByDescending { it.cooked_count }
     }
 
-    Column(Modifier.fillMaxSize().background(Sage100).verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 120.dp)) {
+    Column(Modifier.fillMaxSize().background(Color.Transparent).verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 120.dp)) {
         Spacer(Modifier.height(24.dp))
         Text("独厨SoloChef", fontSize = 40.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Color(0xFF2D4A3A))
         Text("人生不将就，从我的精品厨房开始", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(top = 4.dp))
@@ -130,7 +130,7 @@ fun DashboardScreen(
             }
         } else {
             Row(Modifier.fillMaxWidth().height(160.dp)) {
-                Box(modifier = Modifier.weight(2f).fillMaxHeight().clip(RoundedCornerShape(32.dp)).background(Color.White).dashedBorder(color = Sage200).clickable { onPlaceOrder() }, contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.weight(2f).fillMaxHeight().clip(RoundedCornerShape(32.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)).dashedBorder(color = Sage200.copy(alpha = 0.3f)).clickable { onPlaceOrder() }, contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
                         Surface(modifier = Modifier.size(40.dp), shape = RoundedCornerShape(14.dp), color = Sage50) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.ShoppingCart, contentDescription = null, tint = Sage300, modifier = Modifier.size(20.dp)) } }
                         Spacer(Modifier.height(6.dp))
@@ -165,8 +165,16 @@ fun DashboardScreen(
         Spacer(Modifier.height(12.dp))
 
         if (featured.isEmpty()) {
-            Surface(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage100)) {
-                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { Text("暂无主厨力荐", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage300) }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 48.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .frostedGlassBackground()
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("暂无主厨力荐", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500, modifier = Modifier.padding(32.dp))
             }
         } else {
             // Horizontal scroll — max 6 visible + "更多力荐"

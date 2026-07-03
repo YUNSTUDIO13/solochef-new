@@ -79,12 +79,22 @@ fun ExecutionScreen(
         return "$m:${s.toString().padStart(2, '0')}"
     }
 
-    Box(Modifier.fillMaxSize().background(Sage100)) {
+    Box(Modifier.fillMaxSize().background(Color.Transparent)) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
             Spacer(Modifier.height(24.dp))
 
-            // Header — compact
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            // Header — compact with frosted glass
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .frostedGlassBackground()
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
+                shape = RoundedCornerShape(32.dp),
+                color = Color.Transparent
+            ) {
+            Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(recipe.name, fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
                     Spacer(Modifier.height(4.dp))
@@ -99,6 +109,9 @@ fun ExecutionScreen(
                     Text("剩余总时长", fontSize = 9.sp, color = Sage500, letterSpacing = 2.sp)
                 }
             }
+            }
+
+            Spacer(Modifier.height(12.dp))
 
             // Steps
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
@@ -179,24 +192,51 @@ fun ExecutionScreen(
             }
         }
 
-        // Controls
-        Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), color = Sage100) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // Controls — frosted glass
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .clip(RoundedCornerShape(32.dp))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
+            color = Color.Transparent,
+            shape = RoundedCornerShape(32.dp)
+        ) {
+            Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Surface(onClick = { isPaused = !isPaused }, modifier = Modifier.weight(1f).height(96.dp), shape = RoundedCornerShape(32.dp), color = Color.White, border = BorderStroke(1.dp, Sage200)) {
+                    Surface(
+                        onClick = { isPaused = !isPaused },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(96.dp)
+                            .clip(RoundedCornerShape(32.dp))
+                            .frostedGlassBackground()
+                            .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
+                        shape = RoundedCornerShape(32.dp),
+                        color = Color.Transparent
+                    ) {
                         Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                             Icon(if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause, contentDescription = null, tint = Sage900, modifier = Modifier.size(36.dp))
                             Spacer(Modifier.width(16.dp))
                             Text(if (isPaused) "继续" else "暂停", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Sage900)
                         }
                     }
-                    Surface(onClick = {
-                        if (activeStepIndex < recipe.timeline.size - 1) {
-                            activeStepIndex++
-                        } else {
-                            onComplete(recipe)
-                        }
-                    }, modifier = Modifier.width(112.dp).height(96.dp), shape = RoundedCornerShape(32.dp), color = Sage900) {
+                    Surface(
+                        onClick = {
+                            if (activeStepIndex < recipe.timeline.size - 1) {
+                                activeStepIndex++
+                            } else {
+                                onComplete(recipe)
+                            }
+                        },
+                        modifier = Modifier
+                            .width(112.dp)
+                            .height(96.dp),
+                        shape = RoundedCornerShape(32.dp),
+                        color = Sage900
+                    ) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.SkipNext, contentDescription = null, tint = Color.White, modifier = Modifier.size(36.dp)) }
                     }
                 }

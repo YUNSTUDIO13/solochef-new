@@ -130,7 +130,7 @@ fun FeedbackScreen(
     val infiniteTransition = rememberInfiniteTransition()
     val yAnim by infiniteTransition.animateFloat(0f, -5f, infiniteRepeatable(tween(600), RepeatMode.Reverse))
 
-    Box(Modifier.fillMaxSize().background(Sage100)) {
+    Box(Modifier.fillMaxSize().background(Color.Transparent)) {
         Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
 
             // Tape decoration

@@ -112,7 +112,7 @@ fun FoodCalendar(
             Surface(
                 onClick = { pickerYear = currentYear; showMonthPicker = true },
                 shape = RoundedCornerShape(12.dp),
-                color = Sage100
+                color = Color.Transparent
             ) {
                 Text(
                     monthLabel, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
@@ -310,13 +310,13 @@ private fun CalendarDayCell(
         modifier = Modifier
             .fillMaxSize()
             .clip(RoundedCornerShape(10.dp))
-            .background(if (isSelected) Sage100 else Color.White)
+            .then(if (isSelected) Modifier.background(Sage100, RoundedCornerShape(10.dp)) else Modifier.clip(RoundedCornerShape(10.dp)).frostedGlassBackground())
             .then(
                 if (hasRecords) Modifier.border(
                     1.5.dp,
-                    (if (day.isToday) Sage800 else Sage400).copy(alpha = ringAlpha),
+                    Color.White.copy(alpha = 0.6f),
                     RoundedCornerShape(10.dp)
-                ) else Modifier.border(1.5.dp, Sage100, RoundedCornerShape(10.dp))
+                ) else Modifier.border(1.5.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
             )
             .clickable { onClick() },
         contentAlignment = Alignment.Center

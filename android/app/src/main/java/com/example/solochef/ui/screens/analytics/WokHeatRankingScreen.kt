@@ -1,6 +1,7 @@
 package com.example.solochef.ui.screens.analytics
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,7 +39,7 @@ fun WokHeatRankingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Sage100)
+            .background(Color.Transparent)
     ) {
         // Top bar
         TopAppBar(
@@ -54,7 +55,7 @@ fun WokHeatRankingScreen(
                     Icon(Icons.Default.ArrowBack, null, tint = Sage900)
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Sage100)
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
         )
 
         if (ranked.isEmpty()) {
@@ -83,14 +84,18 @@ private fun RankingRow(rank: Int, recipe: Recipe) {
         1 -> Color(0xFFFFD700)  // gold
         2 -> Color(0xFFC0C0C0)  // silver
         3 -> Color(0xFFCD7F32)  // bronze
-        else -> Sage200
+        else -> Sage800
     }
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .frostedGlassBackground()
+            .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(20.dp)),
         shape = RoundedCornerShape(20.dp),
-        color = Color.White,
-        shadowElevation = if (rank <= 3) 2.dp else 0.dp
+        color = Color.Transparent,
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier

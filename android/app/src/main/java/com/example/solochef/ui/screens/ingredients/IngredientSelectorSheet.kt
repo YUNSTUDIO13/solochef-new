@@ -99,7 +99,7 @@ fun IngredientSelectorSheet(
     ) {
         Surface(
             Modifier.fillMaxWidth().fillMaxHeight(0.95f),
-            color = Sage100,
+            color = Color.White,
             shape = RoundedCornerShape(28.dp)
         ) {
             if (lib == null) {
@@ -170,7 +170,7 @@ fun IngredientSelectorSheet(
                     // ─── Left Sidebar ───
                     Column(
                         Modifier.width(100.dp).fillMaxHeight().background(Sage50)
-                            .verticalScroll(rememberScrollState()).padding(vertical = 4.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         categories.forEach { cat ->
                             val selected = cat.id == selectedCategoryId
@@ -178,7 +178,7 @@ fun IngredientSelectorSheet(
                                 Modifier.fillMaxWidth()
                                     .clickable { selectedCategoryId = cat.id; searchQuery = "" }
                                     .then(
-                                        if (selected) Modifier.background(Color.White, RoundedCornerShape(12.dp))
+                                        if (selected) Modifier.background(Color.White)
                                         else Modifier
                                     )
                                     .padding(horizontal = 6.dp, vertical = 6.dp),

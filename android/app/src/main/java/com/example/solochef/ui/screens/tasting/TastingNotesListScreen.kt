@@ -31,8 +31,8 @@ fun TastingNotesListScreen(
 ) {
     val sorted = remember(tastingNotes) { tastingNotes.sortedByDescending { it.rating } }
 
-    Column(Modifier.fillMaxSize().background(Sage100)) {
-        Surface(Modifier.fillMaxWidth(), color = Sage100.copy(alpha = 0.95f)) {
+    Column(Modifier.fillMaxSize().background(Color.Transparent)) {
+        Surface(Modifier.fillMaxWidth(), color = Color.Transparent) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.ArrowBack, null, tint = Sage900, modifier = Modifier.size(24.dp)) }
                 Text("拾味手记", Modifier.weight(1f).padding(start = 4.dp), fontSize = 20.sp, fontWeight = FontWeight.Black, color = Sage900)
@@ -53,11 +53,16 @@ fun TastingNotesListScreen(
             ) {
                 items(sorted) { note ->
                     Box(
-                        modifier = Modifier.fillMaxWidth().aspectRatio(0.75f).clip(RoundedCornerShape(24.dp))
-                            .background(Sage100).clickable { onSelectTasting(note.id) }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(0.75f)
+                            .clip(RoundedCornerShape(24.dp))
+                            .frostedGlassBackground()
+                            .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(24.dp))
+                            .clickable { onSelectTasting(note.id) }
                     ) {
                         if (note.coverImage.isNotEmpty()) {
-                            AsyncImage(note.coverImage, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                            AsyncImage(note.coverImage, null, Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)), contentScale = ContentScale.Crop)
                         } else {
                             Box(Modifier.fillMaxSize().background(Sage200), contentAlignment = Alignment.Center) {
                                 Icon(Icons.Default.Image, null, tint = Sage300, modifier = Modifier.size(48.dp))

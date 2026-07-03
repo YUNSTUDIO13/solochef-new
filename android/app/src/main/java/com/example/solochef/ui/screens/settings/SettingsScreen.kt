@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -84,7 +85,7 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Sage100)
+            .background(Color.Transparent)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 32.dp)
     ) {
@@ -103,19 +104,23 @@ fun SettingsScreen(
             },
             enabled = !isExporting,
             shape = RoundedCornerShape(32.dp),
-            color = Color(0xFF2D4A3A),
-            modifier = Modifier.fillMaxWidth()
+            color = Color.Transparent,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp))
         ) {
             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(12.dp), color = White10, modifier = Modifier.size(36.dp)) {
+                Surface(shape = RoundedCornerShape(12.dp), color = Color.Transparent, border = BorderStroke(1.dp, Color.Transparent), modifier = Modifier.size(36.dp)) {
                     Box(contentAlignment = Alignment.Center) {
-                        if (isExporting) CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
-                        else Icon(Icons.Default.Save, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        if (isExporting) CircularProgressIndicator(Modifier.size(22.dp), color = Sage900, strokeWidth = 2.dp)
+                        else Icon(Icons.Default.Save, null, tint = Sage900, modifier = Modifier.size(22.dp))
                     }
                 }
                 Column(Modifier.padding(start = 16.dp)) {
-                    Text("导出菜谱 (Zip)", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
-                    Text("压缩图片 + 相对路径打包", fontSize = 10.sp, color = White40, modifier = Modifier.padding(top = 2.dp))
+                    Text("导出菜谱 (Zip)", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900)
+                    Text("压缩图片 + 相对路径打包", fontSize = 10.sp, color = Sage400, modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }
@@ -127,12 +132,15 @@ fun SettingsScreen(
             onClick = { importLauncher.launch(arrayOf("application/zip")) },
             enabled = !isImporting,
             shape = RoundedCornerShape(32.dp),
-            color = Color.White,
-            border = BorderStroke(2.dp, Sage200),
-            modifier = Modifier.fillMaxWidth()
+            color = Color.Transparent,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp))
         ) {
             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(12.dp), color = Sage50, modifier = Modifier.size(36.dp)) {
+                Surface(shape = RoundedCornerShape(12.dp), color = Color.Transparent, border = BorderStroke(1.dp, Color.Transparent), modifier = Modifier.size(36.dp)) {
                     Box(contentAlignment = Alignment.Center) {
                         if (isImporting) CircularProgressIndicator(Modifier.size(22.dp), color = Sage400, strokeWidth = 2.dp)
                         else Icon(Icons.Default.Add, null, tint = Sage400, modifier = Modifier.size(22.dp))
@@ -151,12 +159,15 @@ fun SettingsScreen(
         Surface(
             onClick = onNavigateToIngredients,
             shape = RoundedCornerShape(32.dp),
-            color = Color.White,
-            border = BorderStroke(2.dp, Sage200),
-            modifier = Modifier.fillMaxWidth()
+            color = Color.Transparent,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp))
         ) {
             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFE8F5E9), modifier = Modifier.size(36.dp)) {
+                Surface(shape = RoundedCornerShape(12.dp), color = Color.Transparent, border = BorderStroke(1.dp, Color.Transparent), modifier = Modifier.size(36.dp)) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Star, null, tint = Color(0xFF2D4A3A), modifier = Modifier.size(22.dp))
                     }
@@ -174,12 +185,15 @@ fun SettingsScreen(
         Surface(
             onClick = onNavigateToTasting,
             shape = RoundedCornerShape(32.dp),
-            color = Color.White,
-            border = BorderStroke(2.dp, Sage200),
-            modifier = Modifier.fillMaxWidth()
+            color = Color.Transparent,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp))
         ) {
             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFFF3E0), modifier = Modifier.size(36.dp)) {
+                Surface(shape = RoundedCornerShape(12.dp), color = Color.Transparent, border = BorderStroke(1.dp, Color.Transparent), modifier = Modifier.size(36.dp)) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Star, null, tint = Color(0xFFFF9800), modifier = Modifier.size(22.dp))
                     }
@@ -307,6 +321,13 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                             zos.write(exportJson.encodeToString(com.example.solochef.model.IngredientLibrary.serializer(), ingLib).toByteArray(Charsets.UTF_8))
                             zos.closeEntry()
                         } catch (_: Exception) { /* skip */ }
+                        // Export custom recipe tags
+                        try {
+                            val customTags = storage.getCustomRecipeTags()
+                            zos.putNextEntry(java.util.zip.ZipEntry("custom_recipe_tags.json"))
+                            zos.write(exportJson.encodeToString(com.example.solochef.model.CustomRecipeTags.serializer(), customTags).toByteArray(Charsets.UTF_8))
+                            zos.closeEntry()
+                        } catch (_: Exception) { /* skip */ }
                     }
                 }
                 out.close()
@@ -335,6 +356,7 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                     var cookingRecordsJson: String? = null
                     var tastingNotesJson: String? = null
                     var ingredientLibJson: String? = null
+                    var customRecipeTagsJson: String? = null
                     var imgCounter = 0
 
                     java.util.zip.ZipInputStream(`in`).use { zis ->
@@ -349,6 +371,8 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                                 tastingNotesJson = zis.bufferedReader().readText()
                             } else if (name == "ingredient_library.json") {
                                 ingredientLibJson = zis.bufferedReader().readText()
+                            } else if (name == "custom_recipe_tags.json") {
+                                customRecipeTagsJson = zis.bufferedReader().readText()
                             } else if (name.endsWith("/recipe.json")) {
                                 val prefix = name.removeSuffix("recipe.json")
                                 recipeEntries[prefix] = zis.bufferedReader().readText()
@@ -451,6 +475,19 @@ class SettingsViewModel(application: Application) : androidx.lifecycle.AndroidVi
                                 merged = merged.copy(categories = listOf(merged.categories[favIdx]) + merged.categories.filterIndexed { i, _ -> i != favIdx })
                             }
                             if (merged != current) storage.saveIngredientLibrary(merged)
+                        } catch (_: Exception) { /* skip if parse fails */ }
+                    }
+                    // Restore custom recipe tags
+                    if (customRecipeTagsJson != null) {
+                        try {
+                            val imported = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; isLenient = true }
+                                .decodeFromString<com.example.solochef.model.CustomRecipeTags>(customRecipeTagsJson)
+                            val current = storage.getCustomRecipeTags()
+                            val merged = current.copy(
+                                cookingProcessTags = (current.cookingProcessTags + imported.cookingProcessTags.filter { imp -> imp.id !in current.cookingProcessTags.map { it.id }.toSet() }).distinctBy { it.id },
+                                cuisineTags = (current.cuisineTags + imported.cuisineTags.filter { imp -> imp.id !in current.cuisineTags.map { it.id }.toSet() }).distinctBy { it.id }
+                            )
+                            if (merged != current) storage.saveCustomRecipeTags(merged)
                         } catch (_: Exception) { /* skip if parse fails */ }
                     }
                 }

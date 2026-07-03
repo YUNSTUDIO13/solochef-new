@@ -4,11 +4,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,8 +24,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,24 +61,29 @@ import com.example.solochef.ui.screens.ingredients.IngredientLibraryScreen
 import com.example.solochef.ui.theme.*
 import kotlinx.coroutines.launch
 
-sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
-    data object Dashboard : Screen("dashboard", "首页", Icons.Default.Dashboard)
-    data object Library : Screen("library", "菜谱", Icons.Default.Search)
-    data object Analytics : Screen("analytics", "数据", Icons.Default.BarChart)
-    data object Settings : Screen("settings", "我的", Icons.Default.Settings)
-    data object RecipeDetail : Screen("recipe_detail/{recipeId}", "详情", Icons.Default.Info)
-    data object CreateRecipe : Screen("create_recipe?editId={editId}", "新建", Icons.Default.Add)
-    data object OrderEngine : Screen("order_engine", "点单", Icons.Default.ShoppingCart)
-    data object Picking : Screen("picking/{recipeId}/{isLazy}", "拣货", Icons.Default.Inventory)
-    data object Execution : Screen("execution/{recipeId}/{isLazy}", "烹饪", Icons.Default.Timer)
-    data object Feedback : Screen("feedback/{recipeId}", "完成", Icons.Default.CheckCircle)
-    data object BatchDetail : Screen("batch_detail", "批次", Icons.Default.ListAlt)
-    data object WokHeatRanking : Screen("wok_heat_ranking", "锅气榜", Icons.Default.Whatshot)
-    data object FeaturedAll : Screen("featured_all", "主厨力荐", Icons.Default.AutoAwesome)
-    data object CreateTasting : Screen("create_tasting?editId={editId}", "拾味手记", Icons.Default.Star)
-    data object TastingAll : Screen("tasting_all", "拾味手记", Icons.Default.Star)
-    data object TastingDetail : Screen("tasting_detail/{tastingId}", "拾味手记", Icons.Default.Star)
-    data object IngredientLibrary : Screen("ingredient_library", "食材库", Icons.Default.Whatshot)
+sealed class IconSource
+
+data class VectorIcon(val imageVector: ImageVector) : IconSource()
+data class DrawableIcon(@DrawableRes val resId: Int) : IconSource()
+
+sealed class Screen(val route: String, val label: String, val icon: IconSource) {
+    data object Dashboard : Screen("dashboard", "首页", VectorIcon(Icons.Default.Dashboard))
+    data object Library : Screen("library", "菜谱", DrawableIcon(R.drawable.ic_guo))
+    data object Analytics : Screen("analytics", "数据", VectorIcon(Icons.Default.BarChart))
+    data object Settings : Screen("settings", "我的", VectorIcon(Icons.Default.Settings))
+    data object RecipeDetail : Screen("recipe_detail/{recipeId}", "详情", VectorIcon(Icons.Default.Info))
+    data object CreateRecipe : Screen("create_recipe?editId={editId}", "新建", VectorIcon(Icons.Default.Add))
+    data object OrderEngine : Screen("order_engine", "点单", VectorIcon(Icons.Default.ShoppingCart))
+    data object Picking : Screen("picking/{recipeId}/{isLazy}", "拣货", VectorIcon(Icons.Default.Inventory))
+    data object Execution : Screen("execution/{recipeId}/{isLazy}", "烹饪", VectorIcon(Icons.Default.Timer))
+    data object Feedback : Screen("feedback/{recipeId}", "完成", VectorIcon(Icons.Default.CheckCircle))
+    data object BatchDetail : Screen("batch_detail", "批次", VectorIcon(Icons.Default.ListAlt))
+    data object WokHeatRanking : Screen("wok_heat_ranking", "锅气榜", VectorIcon(Icons.Default.Whatshot))
+    data object FeaturedAll : Screen("featured_all", "主厨力荐", VectorIcon(Icons.Default.AutoAwesome))
+    data object CreateTasting : Screen("create_tasting?editId={editId}", "拾味手记", VectorIcon(Icons.Default.Star))
+    data object TastingAll : Screen("tasting_all", "拾味手记", VectorIcon(Icons.Default.Star))
+    data object TastingDetail : Screen("tasting_detail/{tastingId}", "拾味手记", VectorIcon(Icons.Default.Star))
+    data object IngredientLibrary : Screen("ingredient_library", "食材库", VectorIcon(Icons.Default.Whatshot))
 }
 
 class MainActivity : ComponentActivity() {
@@ -117,9 +129,11 @@ fun SoloChefApp() {
     val showBottomNav = currentRoute in mainScreens.map { it.route } && !hideBottomForCube
     val showFAB = currentRoute == Screen.Dashboard.route || currentRoute == Screen.Library.route
 
+    Box(Modifier.fillMaxSize().warmGradientBackground()) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = Sage100,
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0),
         // ─── Floating Bottom Tab Bar ───
         bottomBar = {
             AnimatedVisibility(
@@ -127,63 +141,102 @@ fun SoloChefApp() {
                 enter = fadeIn() + slideInVertically { it },
                 exit = fadeOut() + slideOutVertically { it }
             ) {
-                Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.BottomCenter) {
-                    // Only the capsule has background - outside is transparent
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(percent = 50),
-                        color = Color(0xFF2D4A3A),
-                        shadowElevation = 20.dp
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    // ─── Liquid Glass Pill with smooth sliding indicator ───
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp)
+                            .clip(RoundedCornerShape(percent = 50))
+                            .liquidGlassBackground()
                     ) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
+                        val selectedIndex = mainScreens.indexOfFirst { currentRoute == it.route }
+
+                        BoxWithConstraints(
+                            Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 8.dp)
                         ) {
-                            mainScreens.forEach { s ->
-                                val sel = currentRoute == s.route
-                                Box(
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Surface(
-                                        onClick = {
-                                            if (sel) return@Surface
-                                            navController.navigate(s.route) {
-                                                popUpTo(Screen.Dashboard.route)
-                                                launchSingleTop = true
-                                            }
-                                            if (s == Screen.Analytics) analyticsKey++
-                                        },
-                                        shape = RoundedCornerShape(percent = 50),
-                                        color = if (sel) Color(0xFF4CAF50) else Color.Transparent
+                            val tabWidth = maxWidth / 4
+                            val indicatorWidth = 56.dp
+                            val indicatorOffset by animateDpAsState(
+                                targetValue = when (selectedIndex) {
+                                    0 -> (tabWidth - indicatorWidth) / 2
+                                    1 -> tabWidth + (tabWidth - indicatorWidth) / 2
+                                    2 -> tabWidth + tabWidth + (tabWidth - indicatorWidth) / 2
+                                    else -> tabWidth + tabWidth + tabWidth + (tabWidth - indicatorWidth) / 2
+                                },
+                                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                            )
+
+                            // Sliding white pill indicator (80% opacity)
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = indicatorOffset)
+                                    .width(indicatorWidth)
+                                    .height(36.dp)
+                                    .clip(RoundedCornerShape(percent = 50))
+                                    .background(Color.White.copy(alpha = 0.8f))
+                                    .align(Alignment.CenterStart)
+                            )
+
+                            // Tab icons
+                            Row(
+                                Modifier.fillMaxSize(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                mainScreens.forEach { s ->
+                                    val sel = currentRoute == s.route
+                                    val interactionSource = remember { MutableInteractionSource() }
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .weight(1f)
+                                            .clickable(
+                                                interactionSource = interactionSource,
+                                                indication = null
+                                            ) {
+                                                if (sel) return@clickable
+                                                navController.navigate(s.route) {
+                                                    popUpTo(Screen.Dashboard.route)
+                                                    launchSingleTop = true
+                                                }
+                                                if (s == Screen.Analytics) analyticsKey++
+                                            },
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Row(
-                                            Modifier.padding(horizontal = if (sel) 14.dp else 8.dp, vertical = 8.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(s.icon, null, Modifier.size(18.dp), tint = if (sel) Color.White else Color(0xFFA5D6A7))
-                                            if (sel) { Spacer(Modifier.width(6.dp)); Text(s.label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White) }
+                                        when (val icon = s.icon) {
+                                            is VectorIcon -> Icon(icon.imageVector, null, Modifier.size(20.dp), tint = if (sel) Sage900 else Sage500)
+                                            is DrawableIcon -> Icon(painter = painterResource(icon.resId), contentDescription = null, modifier = Modifier.size(20.dp), tint = if (sel) Sage900 else Sage500)
                                         }
                                     }
                                 }
                             }
-                            // OrderEngine circle
-                            Box(
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Surface(
-                                    onClick = { navController.navigate(Screen.OrderEngine.route) },
-                                    modifier = Modifier.size(44.dp),
-                                    shape = CircleShape,
-                                    color = Color(0xFFFF7043),
-                                    shadowElevation = 8.dp
-                                ) {
-                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Default.ShoppingCart, null, tint = Color.White, modifier = Modifier.size(22.dp))
-                                    }
-                                }
-                            }
                         }
+                    }
+
+                    // ─── OrderEngine standalone liquid glass circle ───
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .liquidGlassBackground()
+                            .clickable { navController.navigate(Screen.OrderEngine.route) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_eat),
+                            contentDescription = null,
+                            tint = Sage500,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
             }
@@ -258,7 +311,6 @@ fun SoloChefApp() {
             }
 
             composable(Screen.OrderEngine.route) {
-                Box(Modifier.statusBarsPadding()) {
                 OrderEngineScreen(
                     activeBatch = activeBatch,
                     onConfirm = { ids ->
@@ -283,11 +335,9 @@ fun SoloChefApp() {
                     },
                     onCancel = { navController.popBackStack() }
                 )
-                }
             }
 
             composable(Screen.BatchDetail.route) {
-                Box(Modifier.statusBarsPadding()) {
                 activeBatch?.let { batch ->
                     BatchDetailScreen(
                         batch = batch, recipes = recipes,
@@ -349,17 +399,14 @@ fun SoloChefApp() {
                         onClose = { navController.popBackStack() },
                         onOpenSOP = { r -> selectedRecipe = r; navController.navigate("execution/${r.id}/false") }
                     )
-                } ?: run { Box(Modifier.fillMaxSize().background(Sage100)) }
-                }
+                } ?: run { Box(Modifier.fillMaxSize().background(Color.Transparent)) }
             }
 
             composable(Screen.Picking.route, arguments = listOf(navArgument("recipeId") { type = NavType.StringType }, navArgument("isLazy") { type = NavType.BoolType })) { entry ->
-                Box(Modifier.statusBarsPadding()) {
                 val rid = entry.arguments?.getString("recipeId") ?: ""
                 val lazy = entry.arguments?.getBoolean("isLazy") ?: false
                 recipes.find { it.id == rid }?.let { recipe ->
                     PickingScreen(recipe = recipe, onConfirm = { navController.navigate("execution/${recipe.id}/$lazy") { popUpTo(Screen.Picking.route) { inclusive = true } } }, onCancel = { navController.popBackStack() })
-                }
                 }
             }
 
@@ -511,9 +558,7 @@ fun SoloChefApp() {
             }
 
             composable(Screen.IngredientLibrary.route) {
-                Box(Modifier.statusBarsPadding()) {
                 IngredientLibraryScreen(onBack = { navController.popBackStack() })
-                }
             }
 
             composable(Screen.Settings.route) {
@@ -535,4 +580,5 @@ fun SoloChefApp() {
             }
         }
     }
+}
 }

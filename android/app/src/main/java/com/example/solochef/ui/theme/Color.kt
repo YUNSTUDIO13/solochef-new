@@ -1,5 +1,9 @@
 package com.example.solochef.ui.theme
 
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 // ─── Sage Color Palette (1:1 match with Web Tailwind theme) ───
@@ -32,3 +36,48 @@ val DarkButton = Color(0xFF282C27)
 val GreenPlay  = Color(0xFF07C160)
 val Gray100    = Color(0xFFF3F4F6)
 val Gray500    = Color(0xFF6B7280)
+
+// ─── Warm Gradient (Pink-Beige) — global page background ───
+val WarmPink50    = Color(0xFFF9E6E6)
+val WarmCream100  = Color(0xFFF5E6D3)
+val WarmBeige200  = Color(0xFFF2E5D5)
+
+fun Modifier.warmGradientBackground(): Modifier = drawBehind {
+    drawRect(
+        brush = Brush.linearGradient(
+            colors = listOf(WarmPink50, WarmCream100, WarmBeige200),
+            start = Offset.Zero,
+            end = Offset(size.width, size.height)
+        )
+    )
+}
+
+// Frosted-glass surface background: translucent white with subtle shimmer
+val FrostedGlassStart = Color(0x66FFFFFF)
+val FrostedGlassEnd   = Color(0x40FFFFFF)
+val FrostedBorder     = Color(0x40FFFFFF)
+
+fun Modifier.frostedGlassBackground(): Modifier = drawBehind {
+    drawRect(
+        brush = Brush.linearGradient(
+            colors = listOf(FrostedGlassStart, FrostedGlassEnd),
+            start = Offset.Zero,
+            end = Offset(size.width, size.height)
+        )
+    )
+}
+
+// Liquid Glass: high opacity white for clean frosted look
+val LiquidGlassStart = Color(0xCCFFFFFF)
+val LiquidGlassEnd   = Color(0xA3FFFFFF)
+
+fun Modifier.liquidGlassBackground(): Modifier = drawBehind {
+    drawRect(
+        brush = Brush.linearGradient(
+            colors = listOf(LiquidGlassStart, LiquidGlassEnd),
+            start = Offset.Zero,
+            end = Offset(size.width, size.height)
+        )
+    )
+}
+

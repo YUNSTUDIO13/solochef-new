@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +42,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.solochef.model.EnergyLevel
 import com.example.solochef.model.Recipe
+import com.example.solochef.R
 import com.example.solochef.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,7 +74,7 @@ fun LibraryScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Sage100)
+            .background(Color.Transparent)
     ) {
         Column(
             modifier = Modifier
@@ -117,14 +119,16 @@ fun LibraryScreen(
             Box {
             Surface(
                 onClick = { showSearchPopup = true },
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .frostedGlassBackground()
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape),
                 shape = CircleShape,
-                color = Color.White,
-                border = BorderStroke(1.5.dp, Color(0xFF2D4A3A)),
-                shadowElevation = 4.dp
+                color = Color.Transparent
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Search, null, tint = Color(0xFF2D4A3A), modifier = Modifier.size(22.dp))
+                    Icon(painter = painterResource(id = R.drawable.ic_union), null, tint = Color(0xFF2D4A3A), modifier = Modifier.size(20.dp))
                 }
             }
 
@@ -134,13 +138,16 @@ fun LibraryScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Surface(
                 onClick = onCreateClick,
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .frostedGlassBackground()
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape),
                 shape = CircleShape,
-                color = Color(0xFF2D4A3A),
-                shadowElevation = 8.dp
+                color = Color.Transparent
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Add, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(22.dp))
+                    Icon(Icons.Default.Add, null, tint = Color(0xFF2D4A3E), modifier = Modifier.size(22.dp))
                 }
             }
             Spacer(Modifier.height(4.dp))
@@ -463,9 +470,12 @@ private fun FilterChip(
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
-        color = if (selected) selectedColor else Sage50,
-        border = if (selected) null else BorderStroke(1.dp, Sage300),
-        contentColor = if (selected) Color.White else unselectedColor
+        color = if (selected) selectedColor else Color.Transparent,
+        border = if (selected) null else BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
+        contentColor = if (selected) Color.White else unselectedColor,
+        modifier = if (selected) Modifier else Modifier
+            .clip(RoundedCornerShape(50))
+            .frostedGlassBackground()
     ) {
         Text(
             label,
@@ -574,8 +584,8 @@ private fun EmptyState(onCreateClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(32.dp))
-            .border(2.dp, Sage800, RoundedCornerShape(32.dp))
-            .background(Color.White)
+            .frostedGlassBackground()
+            .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp))
             .padding(24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -601,12 +611,16 @@ private fun EmptyState(onCreateClick: () -> Unit) {
             Text("暂无相关菜谱", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Sage900)
             Text("去新建一个展示你的厨艺吧", fontSize = 10.sp, color = Sage400, modifier = Modifier.padding(top = 2.dp))
         }
-        Button(
+        Surface(
             onClick = onCreateClick,
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(50)),
             shape = RoundedCornerShape(50),
-            colors = ButtonDefaults.buttonColors(containerColor = Sage900)
+            color = Color.Transparent
         ) {
-            Text("新建", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+            Text("新建", Modifier.padding(horizontal = 16.dp, vertical = 8.dp), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
         }
     }
 }

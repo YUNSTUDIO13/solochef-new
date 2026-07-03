@@ -145,7 +145,18 @@ data class TastingNote(
 
 // ─── Export/Import Payload ────────────────────────────
 
-@Immutable
+@Serializable
+data class CustomTag(
+    val id: String,
+    val name: String
+)
+
+@Serializable
+data class CustomRecipeTags(
+    val cookingProcessTags: List<CustomTag> = emptyList(),
+    val cuisineTags: List<CustomTag> = emptyList()
+)
+
 @Serializable
 data class BackupPayload(
     val recipes: List<Recipe>,
@@ -153,5 +164,6 @@ data class BackupPayload(
     val stats: UserStats,
     val version: String = "1.0",
     val exportedAt: String,
-    val ingredient_library: IngredientLibrary? = null
+    val ingredient_library: IngredientLibrary? = null,
+    val custom_recipe_tags: CustomRecipeTags? = null
 )

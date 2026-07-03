@@ -97,11 +97,19 @@ fun OrderEngineScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(Color.White)) {
+    Box(Modifier.fillMaxSize().background(Color.White).statusBarsPadding()) {
         // ── Header ──
         Surface(
-            modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(80.dp),
-            color = Color.White.copy(0.85f), shadowElevation = 0.dp
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(80.dp)
+                .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)),
+            color = Color.Transparent,
+            shadowElevation = 0.dp,
+            shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
         ) {
             Row(
                 Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -242,10 +250,13 @@ private fun RecipeCard(
     val count = cart.count { it == recipe.id }
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .frostedGlassBackground()
+            .border(1.dp, Sage200, RoundedCornerShape(28.dp)),
         shape = RoundedCornerShape(28.dp),
-        color = Color.White,
-        border = BorderStroke(1.dp, Sage200)
+        color = Color.Transparent
     ) {
         Row(Modifier.padding(8.dp).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             // Thumbnail — 80dp (matches Web w-20 h-20)

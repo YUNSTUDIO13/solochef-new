@@ -54,9 +54,9 @@ fun CreateTastingScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Sage100)) {
+    Column(Modifier.fillMaxSize().background(Color.Transparent)) {
         // Header
-        Surface(Modifier.fillMaxWidth(), color = Sage100.copy(alpha = 0.95f)) {
+        Surface(Modifier.fillMaxWidth(), color = Color.Transparent) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.ArrowBack, null, tint = Sage900, modifier = Modifier.size(24.dp)) }
                 Text("新建拾味手记", Modifier.weight(1f).padding(start = 4.dp), fontSize = 20.sp, fontWeight = FontWeight.Black, color = Sage900)
@@ -69,7 +69,7 @@ fun CreateTastingScreen(
             // Cover image
             Text("封面图", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
             Spacer(Modifier.height(8.dp))
-            Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(24.dp)).background(Sage50).clickable { coverLoading = true; pickLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(24.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(24.dp)).clickable { coverLoading = true; pickLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) {
                 if (coverLoading) CircularProgressIndicator(Modifier.size(32.dp), strokeWidth = 2.dp, color = Sage800)
                 else if (coverImage.isNotEmpty()) AsyncImage(coverImage, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -83,14 +83,30 @@ fun CreateTastingScreen(
             // URL
             Text("菜谱地址", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(url, { url = it }, Modifier.fillMaxWidth(), placeholder = { Text("输入链接地址", color = Sage300) }, singleLine = true, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage400, unfocusedBorderColor = Sage200, focusedContainerColor = Color.White, unfocusedContainerColor = Color.White))
+            OutlinedTextField(
+                value = url,
+                onValueChange = { url = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .frostedGlassBackground(),
+                placeholder = { Text("输入链接地址", color = Sage300) },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
+                )
+            )
 
             Spacer(Modifier.height(24.dp))
 
             // Rating
             Text("拾味等级", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
             Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White).border(1.dp, Sage200, RoundedCornerShape(16.dp)).padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)).padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 val starColor = Color(0xFFFF9800)
                 for (i in 1..5) {
                     IconButton(onClick = { rating = i.toFloat() }, modifier = Modifier.size(36.dp)) {
@@ -108,7 +124,23 @@ fun CreateTastingScreen(
             // Note
             Text("备注", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(note, { note = it }, Modifier.fillMaxWidth().height(120.dp), placeholder = { Text("写下你的品尝感受…", color = Sage300) }, shape = RoundedCornerShape(16.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Sage400, unfocusedBorderColor = Sage200, focusedContainerColor = Color.White, unfocusedContainerColor = Color.White))
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .frostedGlassBackground(),
+                placeholder = { Text("写下你的品尝感受…", color = Sage300) },
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
+                )
+            )
 
             Spacer(Modifier.height(32.dp))
 
@@ -126,8 +158,16 @@ fun CreateTastingScreen(
                     storage.saveTastingNote(tastingNote)
                     onSaved()
                 }
-            }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(32.dp), color = Sage900) {
-                Text("保存", Modifier.fillMaxWidth().padding(20.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+                .frostedGlassBackground()
+                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
+            shape = RoundedCornerShape(32.dp),
+            color = Color.Transparent
+            ) {
+                Text("保存", Modifier.fillMaxWidth().padding(20.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontSize = 16.sp, fontWeight = FontWeight.Black, color = Sage900)
             }
             Spacer(Modifier.height(32.dp))
         }
