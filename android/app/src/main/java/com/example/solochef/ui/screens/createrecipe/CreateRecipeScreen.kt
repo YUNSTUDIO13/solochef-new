@@ -23,7 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,6 +45,7 @@ import kotlinx.coroutines.withContext
 import java.util.UUID
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.ui.text.input.KeyboardType
 
 private val MATERIAL_UNITS = listOf("g", "kg", "个", "只", "把", "勺", "包", "盒", "份", "片", "块", "根", "条", "升", "毫升", "杯", "盘", "粒", "适量", "少许")
@@ -81,6 +84,27 @@ fun CreateRecipeScreen(
 
     val cost = remember { mutableStateOf(existingRecipe?.cost?.toString() ?: "") }
     val price = remember { mutableStateOf(existingRecipe?.price?.toString() ?: "") }
+    val description = remember { mutableStateOf(existingRecipe?.description ?: "") }
+
+    // ── Validation helper ──
+    fun validate(): String? {
+        if (name.value.isBlank()) return "菜谱名称不能为空"
+        val c = cost.value.toDoubleOrNull()
+        if (c == null || c <= 0) return "请输入成本"
+        val p = price.value.toDoubleOrNull()
+        if (p == null || p <= 0) return "请输入售价"
+        val processSelected = tags.value.any { it in COOKING_PROCESS_TAGS || it in customTags.value.cookingProcessTags.map { ct -> ct.name } }
+        if (!processSelected) return "请选择烹饪工艺"
+        val cuisineSelected = tags.value.any { it in CUISINE_TAGS || it in customTags.value.cuisineTags.map { ct -> ct.name } }
+        if (!cuisineSelected) return "请选择菜系维度"
+        val hasMaterials = materials.value.values.any { list -> list.any { it.item.isNotBlank() } }
+        if (!hasMaterials) return "请至少添加一个物料"
+        return null
+    }
+
+    val isFormValid by remember(name.value, cost.value, price.value, tags.value, materials.value) {
+        derivedStateOf { validate() == null }
+    }
 
     // ── Image targets ──
     var imageTarget by remember { mutableStateOf("") } // "cover" | "bom" | "step"
@@ -199,7 +223,7 @@ fun CreateRecipeScreen(
     }
 
     // ── UI matching Web pixel-for-pixel ──
-    Column(Modifier.fillMaxSize().background(Color.Transparent)) {
+    Column(Modifier.fillMaxSize().background(Color.Transparent).imePadding()) {
         // Header
         Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(if (existingRecipe != null) "编辑菜谱" else "新建菜谱", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Sage900)
@@ -260,16 +284,40 @@ fun CreateRecipeScreen(
                 Column(Modifier.weight(1f)) {
                     Text("精力等级", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
                     var eExpanded by remember { mutableStateOf(false) }
-                    Box { Surface(onClick = { eExpanded = true }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(16.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)), shape = RoundedCornerShape(16.dp), color = Color.Transparent) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Text(ENERGY_LEVEL_OPTIONS.find { it.first == energy.value }?.second ?: "正常", Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage900); Icon(Icons.Default.ArrowDropDown, null, tint = Sage400, modifier = Modifier.size(20.dp)) } }
-                        DropdownMenu(eExpanded, { eExpanded = false }) { ENERGY_LEVEL_OPTIONS.forEach { (l, lbl) -> DropdownMenuItem(text = { Text(lbl, fontWeight = FontWeight.Bold) }, onClick = { energy.value = l; eExpanded = false }) } }
+                    var eWidth by remember { mutableStateOf(0.dp) }
+                    val density = LocalDensity.current
+                    Box(Modifier.onSizeChanged { eWidth = with(density) { it.width.toDp() } }) {
+                        Surface(onClick = { eExpanded = true }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(16.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)), shape = RoundedCornerShape(16.dp), color = Color.Transparent) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Text(ENERGY_LEVEL_OPTIONS.find { it.first == energy.value }?.second ?: "正常", Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage900); Icon(Icons.Default.ArrowDropDown, null, tint = Sage400, modifier = Modifier.size(20.dp)) } }
+                        DropdownMenu(
+                            expanded = eExpanded,
+                            onDismissRequest = { eExpanded = false },
+                            modifier = Modifier
+                                .width(eWidth)
+                                .clip(RoundedCornerShape(16.dp))
+                                .frostedGlassBackground()
+                                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+                            shape = RoundedCornerShape(16.dp),
+                            containerColor = Color.Transparent,
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp,
+                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
+                        ) {
+                            ENERGY_LEVEL_OPTIONS.forEach { (l, lbl) ->
+                                DropdownMenuItem(
+                                    text = { Text(lbl, fontWeight = FontWeight.Bold, color = Sage900) },
+                                    onClick = { energy.value = l; eExpanded = false },
+                                    colors = MenuDefaults.itemColors(textColor = Sage900)
+                                )
+                            }
+                        }
                     }
                 }
                 Column(Modifier.weight(1f)) {
                     Text("主厨力荐", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
                     Surface(modifier = Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(16.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(16.dp)), shape = RoundedCornerShape(16.dp), color = Color.Transparent) {
                         Row(Modifier.padding(4.dp)) {
-                            Surface(onClick = { featured.value = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = if (featured.value) Sage800 else Color.Transparent) { Text("是 (Yes)", modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (featured.value) Color.White else Sage400) }
-                            Surface(onClick = { featured.value = false }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = if (!featured.value) Sage800 else Color.Transparent) { Text("否 (No)", modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (!featured.value) Color.White else Sage400) }
+                            Surface(onClick = { featured.value = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = if (featured.value) Sage800 else Color.Transparent) { Text("是", modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (featured.value) Color.White else Sage400) }
+                            Surface(onClick = { featured.value = false }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = if (!featured.value) Sage800 else Color.Transparent) { Text("否", modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (!featured.value) Color.White else Sage400) }
                         }
                     }
                 }
@@ -326,7 +374,7 @@ fun CreateRecipeScreen(
             Spacer(Modifier.height(20.dp))
 
             // ── Tags (Web: white card inside basic-info section) ──
-            Text("分类标签 (Tags)", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
+            Text("分类标签", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage500)
             Spacer(Modifier.height(8.dp))
             Surface(Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).frostedGlassBackground().border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)), RoundedCornerShape(32.dp), Color.Transparent) {
                 Column(Modifier.padding(16.dp)) {
@@ -452,7 +500,7 @@ fun CreateRecipeScreen(
             Spacer(Modifier.height(24.dp))
 
             // ── BOM Section ──
-            Text("物料清单 (BOM)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900)
+            Text("物料清单", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900)
             Spacer(Modifier.height(12.dp))
 
             // Unified "从食材库选择" button
@@ -603,7 +651,7 @@ fun CreateRecipeScreen(
             Spacer(Modifier.height(16.dp))
 
             // ── Timeline Section (Web) ──
-            Text("烹饪步骤 (Timeline)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900)
+            Text("烹饪步骤", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900)
             Spacer(Modifier.height(8.dp))
 
             timeline.value.forEachIndexed { _, step ->
@@ -673,7 +721,7 @@ fun CreateRecipeScreen(
 
                         // Step images (Web: 步骤图解)
                         Spacer(Modifier.height(10.dp))
-                        Text("步骤图解 (Instructional Media)", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
+                        Text("步骤图解", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage400)
                         Spacer(Modifier.height(8.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             // Upload placeholder (always last)
@@ -754,13 +802,41 @@ fun CreateRecipeScreen(
                     Text("添加步骤", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900)
                 }
             }
+            Spacer(Modifier.height(24.dp))
+
+            // ── 菜谱介绍 (Description) ──
+            Text("菜谱介绍", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Sage900)
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = description.value,
+                onValueChange = { description.value = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 120.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .frostedGlassBackground(),
+                placeholder = { Text("介绍一下这道菜的故事、口感或烹饪心得...", color = Sage300, fontSize = 13.sp) },
+                singleLine = false,
+                shape = RoundedCornerShape(24.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.White.copy(alpha = 0.4f),
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
+                ),
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Sage900, lineHeight = 18.sp)
+            )
         }
 
         // ── Save Button (Web: footer absolute bottom-0) ──
         Surface(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 24.dp), color = Color.Transparent) {
             Surface(
                 onClick = {
-                    if (name.value.isBlank()) return@Surface
+                    val error = validate()
+                    if (error != null) {
+                        android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_SHORT).show()
+                        return@Surface
+                    }
                     val c = cost.value.toDoubleOrNull() ?: 0.0
                     val p = price.value.toDoubleOrNull() ?: 0.0
                     onSave(Recipe(
@@ -774,10 +850,11 @@ fun CreateRecipeScreen(
                         materials = materials.value.mapValues { (_, mats) -> mats.map { if (it.unit.isEmpty()) it.copy(unit = "g") else it } },
                         timeline = timeline.value,
                         tags = tags.value,
+                        description = description.value,
                         updated_at = System.currentTimeMillis().toString()
                     ))
                 },
-                enabled = name.value.isNotBlank(),
+                enabled = isFormValid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
@@ -804,7 +881,16 @@ fun CreateRecipeScreen(
                 showIngredientSelector = false
                 selected.forEach { ing ->
                     val sourceCat = lib.categories.find { cat -> cat.ingredients.any { it.id == ing.id } }
-                    val targetCat = sourceCat?.targetCategory ?: "seasoning"
+                    val targetCat = if (sourceCat?.targetCategory == "favorite") {
+                        val byCategoryId = lib.categories.find { it.id == ing.categoryId && it.targetCategory != "favorite" }
+                        byCategoryId?.targetCategory
+                            ?: lib.categories.find { cat ->
+                                cat.targetCategory != "favorite" && cat.ingredients.any { it.id == ing.id }
+                            }?.targetCategory
+                            ?: "seasoning"
+                    } else {
+                        sourceCat?.targetCategory ?: "seasoning"
+                    }
                     val m = Material(item = ing.name, amount = "", unit = "g", is_essential = true)
                     val existing = materials.value[targetCat]?.toMutableList() ?: mutableListOf()
                     if (m.item !in existing.map { it.item }) {

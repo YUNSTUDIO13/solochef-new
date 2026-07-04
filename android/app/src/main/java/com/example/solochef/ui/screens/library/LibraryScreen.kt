@@ -176,22 +176,6 @@ fun LibraryScreen(
                         RecipeCard(recipe = recipe, onClick = { onSelectRecipe(recipe) })
                     }
                 }
-                
-                // Transparent dark gradient overlay at top of recipe grid
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(24.dp)
-                        .align(Alignment.TopCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Sage100.copy(alpha = 0.35f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
             }
         }
         } // end Column

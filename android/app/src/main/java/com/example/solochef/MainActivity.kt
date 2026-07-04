@@ -286,7 +286,7 @@ fun SoloChefApp() {
                 val id = entry.arguments?.getString("recipeId") ?: ""
                 recipes.find { it.id == id }?.let { recipe ->
                     RecipeDetailScreen(
-                        recipe = recipe,
+                        initialRecipe = recipe,
                         onBack = { navController.popBackStack() },
                         onGoCook = { selectedRecipe = recipe; navController.navigate("picking/${recipe.id}/false") },
                         onDelete = { rid -> scope.launch { storage.deleteRecipe(rid); recipes = storage.getAllRecipes() }; navController.popBackStack() },
@@ -302,8 +302,12 @@ fun SoloChefApp() {
                 CreateRecipeScreen(
                     existingRecipe = existing,
                     onSave = { recipe ->
-                        scope.launch { storage.saveRecipe(recipe); recipes = storage.getAllRecipes(); stats = stats.ignite().also { storage.saveStats(it) } }
-                        navController.navigate(Screen.Library.route) { popUpTo(Screen.Dashboard.route) }
+                        scope.launch {
+                            storage.saveRecipe(recipe)
+                            recipes = storage.getAllRecipes()
+                            stats = stats.ignite().also { storage.saveStats(it) }
+                            navController.navigate(Screen.Library.route) { popUpTo(Screen.Dashboard.route) }
+                        }
                     },
                     onCancel = { navController.popBackStack() }
                 )

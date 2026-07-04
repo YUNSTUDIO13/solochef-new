@@ -34,6 +34,7 @@ val Black60   = Color(0x99000000)
 // ─── Functional ───
 val DarkButton = Color(0xFF282C27)
 val GreenPlay  = Color(0xFF07C160)
+val SelectedGreen = Color(0xFFEEF5EE)
 val Gray100    = Color(0xFFF3F4F6)
 val Gray500    = Color(0xFF6B7280)
 

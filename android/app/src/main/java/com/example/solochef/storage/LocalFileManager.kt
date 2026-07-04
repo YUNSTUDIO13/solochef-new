@@ -206,6 +206,7 @@ class LocalFileManager(private val context: Context) {
         sb.appendLine("| 售价 | ¥%.2f |".format(recipe.price))
         sb.appendLine("| 最后烹饪 | ${recipe.last_cooked_at ?: "从未"} |")
         sb.appendLine("| 标签 | ${recipe.tags.joinToString(", ")} |")
+        if (recipe.description.isNotBlank()) sb.appendLine("| 菜谱介绍 | ${recipe.description} |")
         sb.appendLine()
 
         // Materials

@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.solochef.model.EnergyLevel
 import com.example.solochef.model.Recipe
 import com.example.solochef.ui.theme.*
 import kotlinx.coroutines.delay
@@ -99,9 +100,16 @@ fun ExecutionScreen(
                     Text(recipe.name, fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.05).sp, color = Sage900)
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(modifier = Modifier, shape = RoundedCornerShape(4.dp), color = Sage900) { Text(if (isLazy) "懒人模式" else "标准模式", Modifier.padding(horizontal = 8.dp, vertical = 2.dp), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp) }
+                        val levels = listOf("极简" to EnergyLevel.Low, "正常" to EnergyLevel.Mid, "满满" to EnergyLevel.High)
+                        Box(Modifier.clip(RoundedCornerShape(4.dp)).background(Sage900).padding(horizontal = 8.dp, vertical = 2.dp)) {
+                            Text(energyLevelLabel(recipe.energy_level), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
+                        }
                         Spacer(Modifier.width(8.dp))
-                        Text("${recipe.energy_level.name} 精力", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Sage500, letterSpacing = 2.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            levels.filter { it.second != recipe.energy_level }.forEach { (label, _) ->
+                                Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, color = Sage500, letterSpacing = 2.sp)
+                            }
+                        }
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -118,7 +126,7 @@ fun ExecutionScreen(
                 recipe.timeline.forEachIndexed { index, step ->
                     val isActive = index == activeStepIndex
                     val isPast = index < activeStepIndex
-                    if (isPast) return@forEachIndexed
+                    if (isPast || !isActive) return@forEachIndexed
 
                     Surface(
                         Modifier.fillMaxWidth().padding(vertical = 6.dp),
@@ -192,54 +200,46 @@ fun ExecutionScreen(
             }
         }
 
-        // Controls — frosted glass
-        Surface(
+        // Controls
+        Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-                .clip(RoundedCornerShape(32.dp))
-                .frostedGlassBackground()
-                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
-            color = Color.Transparent,
-            shape = RoundedCornerShape(32.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Surface(
-                        onClick = { isPaused = !isPaused },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(96.dp)
-                            .clip(RoundedCornerShape(32.dp))
-                            .frostedGlassBackground()
-                            .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
-                        shape = RoundedCornerShape(32.dp),
-                        color = Color.Transparent
-                    ) {
-                        Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                            Icon(if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause, contentDescription = null, tint = Sage900, modifier = Modifier.size(36.dp))
-                            Spacer(Modifier.width(16.dp))
-                            Text(if (isPaused) "继续" else "暂停", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Sage900)
-                        }
-                    }
-                    Surface(
-                        onClick = {
-                            if (activeStepIndex < recipe.timeline.size - 1) {
-                                activeStepIndex++
-                            } else {
-                                onComplete(recipe)
-                            }
-                        },
-                        modifier = Modifier
-                            .width(112.dp)
-                            .height(96.dp),
-                        shape = RoundedCornerShape(32.dp),
-                        color = Sage900
-                    ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.SkipNext, contentDescription = null, tint = Color.White, modifier = Modifier.size(36.dp)) }
-                    }
+            Surface(
+                onClick = { isPaused = !isPaused },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(96.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .frostedGlassBackground()
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(32.dp)),
+                shape = RoundedCornerShape(32.dp),
+                color = Color.Transparent
+            ) {
+                Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    Icon(if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause, contentDescription = null, tint = Sage900, modifier = Modifier.size(36.dp))
+                    Spacer(Modifier.width(16.dp))
+                    Text(if (isPaused) "继续" else "暂停", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Sage900)
                 }
+            }
+            Surface(
+                onClick = {
+                    if (activeStepIndex < recipe.timeline.size - 1) {
+                        activeStepIndex++
+                    } else {
+                        onComplete(recipe)
+                    }
+                },
+                modifier = Modifier
+                    .width(112.dp)
+                    .height(96.dp),
+                shape = RoundedCornerShape(32.dp),
+                color = Sage900
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Default.SkipNext, contentDescription = null, tint = Color.White, modifier = Modifier.size(36.dp)) }
             }
         }
 
@@ -258,4 +258,10 @@ fun ExecutionScreen(
             Box(Modifier.fillMaxSize().border(20.dp, Color(0xFFEAB308).copy(0.2f)))
         }
     }
+}
+
+private fun energyLevelLabel(level: EnergyLevel): String = when (level) {
+    EnergyLevel.High -> "满满"
+    EnergyLevel.Mid -> "正常"
+    EnergyLevel.Low -> "极简"
 }

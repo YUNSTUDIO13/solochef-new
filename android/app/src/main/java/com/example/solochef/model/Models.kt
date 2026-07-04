@@ -66,6 +66,7 @@ data class Recipe(
     ),
     val timeline: List<TimelineStep> = emptyList(),
     val tags: List<String> = emptyList(),
+    val description: String = "",
     val updated_at: String? = null
 )
 

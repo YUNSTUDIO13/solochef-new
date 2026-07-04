@@ -13,12 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.solochef.R
 import com.example.solochef.model.*
 import com.example.solochef.ui.theme.*
 
@@ -125,11 +127,13 @@ fun BatchDetailScreen(
                                 color = Color.Transparent
                             ) {
                                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(modifier = Modifier.size(40.dp), shape = RoundedCornerShape(12.dp), color = if (checked) Color(0xFF10B981) else Color.Transparent, border = BorderStroke(1.dp, if (checked) Color(0xFF10B981) else Sage200)) {
-                                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                            if (checked) Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                                            else Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Sage300, modifier = Modifier.size(16.dp))
-                                        }
+                                    Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            painter = painterResource(if (checked) R.drawable.ic_check_circle_filled else R.drawable.ic_discount),
+                                            contentDescription = null,
+                                            tint = if (checked) Color(0xFF10B981) else Sage300,
+                                            modifier = Modifier.size(14.dp)
+                                        )
                                     }
                                     Spacer(Modifier.width(16.dp))
                                     Text(m.item, Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (checked) Sage400 else Sage900, textDecoration = if (checked) androidx.compose.ui.text.style.TextDecoration.LineThrough else null, maxLines = 2, overflow = TextOverflow.Ellipsis)
