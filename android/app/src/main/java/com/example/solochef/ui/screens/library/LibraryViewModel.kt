@@ -1,20 +1,11 @@
 package com.example.solochef.ui.screens.library
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.solochef.model.EnergyLevel
-import com.example.solochef.model.Recipe
-import com.example.solochef.storage.LocalFileManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
-class LibraryViewModel(application: Application) : AndroidViewModel(application) {
-    private val storage = LocalFileManager(application)
-    private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
-    val recipes: StateFlow<List<Recipe>> = _recipes.asStateFlow()
+class LibraryViewModel : androidx.lifecycle.ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
     private val _selectedTags = MutableStateFlow<Set<String>>(emptySet())
@@ -24,8 +15,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     private val _showFilters = MutableStateFlow(false)
     val showFilters: StateFlow<Boolean> = _showFilters.asStateFlow()
 
-    init { loadRecipes() }
-    fun loadRecipes() { viewModelScope.launch { _recipes.value = storage.getAllRecipes() } }
     fun setSearchQuery(q: String) { _searchQuery.value = q }
     fun toggleFilter() { _showFilters.value = !_showFilters.value }
     fun toggleTag(tag: String) { _selectedTags.value = if (tag in _selectedTags.value) _selectedTags.value - tag else _selectedTags.value + tag }

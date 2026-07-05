@@ -17,7 +17,20 @@ import java.io.File
  * - Backup export writes a single SoloChef_Backup_{date}.md with embedded JSON payload
  * - Import parses any .md with SOLOCHEF_DATA_START/END markers
  */
-class LocalFileManager(private val context: Context) {
+class LocalFileManager(private val context: Context?) {
+
+    // 测试专用：直接用目录路径，绕过 Android Context 依赖
+    private var testDir: File? = null
+
+    /** 测试构造器 */
+    internal constructor(testDir: File) : this(null) {
+        this.testDir = testDir.also { it.mkdirs() }
+    }
+
+    init {
+        // 生产构造器（Context 非空）走这里
+        testDir = null
+    }
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -27,13 +40,13 @@ class LocalFileManager(private val context: Context) {
     }
 
     private val recipesDir: File
-        get() = File(context.filesDir, "recipes").also { it.mkdirs() }
+        get() = File(testDir ?: context!!.filesDir, "recipes").also { it.mkdirs() }
 
     private val imagesDir: File
-        get() = File(context.filesDir, "images").also { it.mkdirs() }
+        get() = File(testDir ?: context!!.filesDir, "images").also { it.mkdirs() }
 
     private val dataDir: File
-        get() = context.filesDir
+        get() = testDir ?: context!!.filesDir
 
     companion object {
         const val PAYLOAD_START = "<!-- SOLOCHEF_DATA_START"

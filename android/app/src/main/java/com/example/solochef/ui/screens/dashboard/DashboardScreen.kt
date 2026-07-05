@@ -60,6 +60,7 @@ class DashboardViewModel(app: android.app.Application) : androidx.lifecycle.Andr
 
 @Composable
 fun DashboardScreen(
+    recipes: List<Recipe> = emptyList(),
     onPlaceOrder: () -> Unit,
     onOpenBatch: () -> Unit,
     onSelectRecipe: (Recipe) -> Unit,
@@ -72,7 +73,6 @@ fun DashboardScreen(
     activeBatchOverride: OrderBatch? = null,
     vm: DashboardViewModel = viewModel()
 ) {
-    val recipes by vm.recipes.collectAsStateWithLifecycle()
     val stats by vm.stats.collectAsStateWithLifecycle()
     val vmA = vm.activeBatch.collectAsStateWithLifecycle()
     val activeBatch = activeBatchOverride ?: vmA.value

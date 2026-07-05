@@ -35,6 +35,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,23 +50,33 @@ import com.example.solochef.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
+    recipes: List<Recipe> = emptyList(),
     libraryName: String = "菜谱库",
     onLibraryNameChange: (String) -> Unit = {},
     onSelectRecipe: (Recipe) -> Unit,
     onCreateClick: () -> Unit,
     viewModel: LibraryViewModel = viewModel()
 ) {
-    val recipes by viewModel.recipes.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedTags by viewModel.selectedTags.collectAsStateWithLifecycle()
     val selectedEnergy by viewModel.selectedEnergyLevels.collectAsStateWithLifecycle()
     var showSearchPopup by remember { mutableStateOf(false) }
     var showRenamePopup by remember { mutableStateOf(false) }
     var renameText by remember { mutableStateOf("") }
+    val searchFocusRequester = remember { FocusRequester() }
+
+    // Auto-focus search field when popup opens
+    LaunchedEffect(showSearchPopup) {
+        if (showSearchPopup) {
+            kotlinx.coroutines.delay(100)
+            searchFocusRequester.requestFocus()
+        }
+    }
 
     val filtered = remember(recipes, searchQuery, selectedTags, selectedEnergy) {
         recipes.filter { recipe ->
-            val mSearch = searchQuery.isBlank() || recipe.name.contains(searchQuery, ignoreCase = true)
+            val mSearch = searchQuery.isBlank() || recipe.name.contains(searchQuery, ignoreCase = true) ||
+                recipe.materials.values.any { list -> list.any { it.item.contains(searchQuery, ignoreCase = true) } }
             val mTags = selectedTags.isEmpty() || selectedTags.any { recipe.tags.contains(it) }
             val mEnergy = selectedEnergy.isEmpty() || selectedEnergy.contains(recipe.energy_level)
             mSearch && mTags && mEnergy
@@ -234,7 +246,8 @@ fun LibraryScreen(
                             ),
                             textStyle = TextStyle(fontSize = 11.sp, lineHeight = 11.sp, platformStyle = PlatformTextStyle(includeFontPadding = false)),
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth().height(48.dp)
+                            modifier = Modifier.fillMaxWidth().height(48.dp).focusRequester(searchFocusRequester),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search)
                         )
                         Spacer(Modifier.height(16.dp))
                         

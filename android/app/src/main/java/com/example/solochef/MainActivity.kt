@@ -154,7 +154,7 @@ fun SoloChefApp() {
                             .weight(1f)
                             .height(52.dp)
                             .clip(RoundedCornerShape(percent = 50))
-                            .liquidGlassBackground()
+                            .background(Color.White)
                     ) {
                         val selectedIndex = mainScreens.indexOfFirst { currentRoute == it.route }
 
@@ -175,14 +175,14 @@ fun SoloChefApp() {
                                 animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
                             )
 
-                            // Sliding white pill indicator (80% opacity)
+                            // Sliding indicator (transparent gray 80%)
                             Box(
                                 modifier = Modifier
                                     .offset(x = indicatorOffset)
                                     .width(indicatorWidth)
                                     .height(36.dp)
                                     .clip(RoundedCornerShape(percent = 50))
-                                    .background(Color.White.copy(alpha = 0.8f))
+                                    .background(Color.Black.copy(alpha = 0.15f))
                                     .align(Alignment.CenterStart)
                             )
 
@@ -227,7 +227,7 @@ fun SoloChefApp() {
                         modifier = Modifier
                             .size(52.dp)
                             .clip(CircleShape)
-                            .liquidGlassBackground()
+                            .background(Color.White)
                             .clickable { navController.navigate(Screen.OrderEngine.route) },
                         contentAlignment = Alignment.Center
                     ) {
@@ -251,6 +251,7 @@ fun SoloChefApp() {
             composable(Screen.Dashboard.route) {
                 Box(Modifier.statusBarsPadding()) {
                 DashboardScreen(
+                    recipes = recipes,
                     activeBatchOverride = activeBatch,
                     tastingNotes = tastingNotes,
                     onPlaceOrder = { navController.navigate(Screen.OrderEngine.route) },
@@ -274,6 +275,7 @@ fun SoloChefApp() {
             composable(Screen.Library.route) {
                 Box(Modifier.statusBarsPadding()) {
                 LibraryScreen(
+                    recipes = recipes,
                     libraryName = libraryName,
                     onLibraryNameChange = { libraryName = it; scope.launch { storage.saveLibraryName(it) } },
                     onSelectRecipe = { r -> selectedRecipe = r; navController.navigate("recipe_detail/${r.id}") },
