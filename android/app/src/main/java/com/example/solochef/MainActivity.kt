@@ -113,6 +113,8 @@ fun SoloChefApp() {
     var feedbackBatchRecipes by remember { mutableStateOf<List<Recipe>>(emptyList()) }
     var feedbackReceiptDate by remember { mutableStateOf<Long?>(null) }
     var analyticsKey by remember { mutableIntStateOf(0) }
+    var analyticsYear by remember { mutableIntStateOf(java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)) }
+    var analyticsMonth by remember { mutableIntStateOf(java.util.Calendar.getInstance().get(java.util.Calendar.MONTH)) }
     var libraryName by remember { mutableStateOf("菜谱库") }
 
     LaunchedEffect(Unit) {
@@ -502,6 +504,10 @@ fun SoloChefApp() {
                             activeBatch = batch
                             navController.navigate(Screen.OrderEngine.route)
                         }
+                    },
+                    onMonthChanged = { year, month ->
+                        analyticsYear = year
+                        analyticsMonth = month
                     }
                 )
                 }
@@ -509,7 +515,13 @@ fun SoloChefApp() {
 
             composable(Screen.WokHeatRanking.route) {
                 Box(Modifier.statusBarsPadding()) {
-                WokHeatRankingScreen(recipes = recipes, onBack = { navController.popBackStack() })
+                WokHeatRankingScreen(
+                    recipes = recipes,
+                    cookingRecords = cookingRecords,
+                    selectedYear = analyticsYear,
+                    selectedMonth = analyticsMonth,
+                    onBack = { navController.popBackStack() }
+                )
                 }
             }
 

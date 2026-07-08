@@ -52,7 +52,8 @@ fun FoodCalendar(
     onSelectRecipe: (Recipe) -> Unit,
     onShareReceipt: ((List<Recipe>) -> Unit)? = null,
     onDeleteRecord: ((String) -> Unit)? = null,
-    onCreateRecord: ((Long) -> Unit)? = null
+    onCreateRecord: ((Long) -> Unit)? = null,
+    onMonthChanged: ((year: Int, month: Int) -> Unit)? = null
 ) {
     val cal = remember { Calendar.getInstance() }
     var currentMonth by remember { mutableIntStateOf(cal.get(Calendar.MONTH)) }
@@ -80,6 +81,11 @@ fun FoodCalendar(
 
     // Month label
     val monthLabel = "${currentYear}年${currentMonth + 1}月"
+
+    // Notify external listener when month changes
+    LaunchedEffect(currentMonth, currentYear) {
+        onMonthChanged?.invoke(currentYear, currentMonth)
+    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Month navigation with clickable picker
@@ -115,8 +121,8 @@ fun FoodCalendar(
                 color = Color.Transparent
             ) {
                 Text(
-                    monthLabel, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                    fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = Sage900,
+                    monthLabel, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = Sage900,
                     textAlign = TextAlign.Center
                 )
             }
@@ -216,7 +222,7 @@ fun FoodCalendar(
             )
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
 
         // Weekday headers
         Row(Modifier.fillMaxWidth()) {
@@ -229,7 +235,7 @@ fun FoodCalendar(
             }
         }
 
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(2.dp))
 
         // Day grid (chunk into weeks)
         Box {
@@ -237,7 +243,7 @@ fun FoodCalendar(
                 days.chunked(7).forEachIndexed { _, weekDays ->
                     Row(Modifier.fillMaxWidth()) {
                         weekDays.forEach { day ->
-                            Box(modifier = Modifier.weight(1f).aspectRatio(1f).padding(2.dp)) {
+                            Box(modifier = Modifier.weight(1f).aspectRatio(1f).padding(1.5.dp)) {
                                 if (day.date > 0 && day.isCurrentMonth) {
                                     CalendarDayCell(
                                         day = day,
@@ -309,14 +315,14 @@ private fun CalendarDayCell(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(10.dp))
-            .then(if (isSelected) Modifier.background(Sage100, RoundedCornerShape(10.dp)) else Modifier.clip(RoundedCornerShape(10.dp)).frostedGlassBackground())
+            .clip(CircleShape)
+            .then(if (isSelected) Modifier.background(Sage100, CircleShape) else Modifier.clip(CircleShape).frostedGlassBackground())
             .then(
                 if (hasRecords) Modifier.border(
                     1.5.dp,
                     Color.White.copy(alpha = 0.6f),
-                    RoundedCornerShape(10.dp)
-                ) else Modifier.border(1.5.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                    CircleShape
+                ) else Modifier.border(1.5.dp, Color.White.copy(alpha = 0.4f), CircleShape)
             )
             .clickable { onClick() },
         contentAlignment = Alignment.Center
@@ -325,14 +331,14 @@ private fun CalendarDayCell(
             AsyncImage(
                 model = coverImage,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)),
+                modifier = Modifier.fillMaxSize().clip(CircleShape),
                 contentScale = ContentScale.Crop
             )
             // Subtle overlay
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+                    .background(Color.Black.copy(alpha = 0.12f), CircleShape)
             )
         }
 
@@ -347,7 +353,7 @@ private fun CalendarDayCell(
                 Box(
                     modifier = Modifier
                         .fillMaxSize(0.88f)
-                        .border(1.dp, Sage400.copy(alpha = ringAlpha), RoundedCornerShape(8.dp))
+                        .border(1.dp, Sage400.copy(alpha = ringAlpha), CircleShape)
                 )
             }
         }
@@ -357,7 +363,7 @@ private fun CalendarDayCell(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     "${day.date}",
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = if (day.isToday) FontWeight.Black else FontWeight.Bold,
                     color = if (day.isToday) Sage900 else Sage500,
                     textAlign = TextAlign.Center
