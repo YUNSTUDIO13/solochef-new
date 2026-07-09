@@ -115,24 +115,6 @@ private fun RankingRow(rank: Int, recipe: Recipe, count: Int) {
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Rank number
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(accentColor.copy(alpha = 0.15f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                "${rank}",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Black,
-                color = accentColor
-            )
-        }
-
-        Spacer(Modifier.width(12.dp))
-
         // Cover image
         Box(
             modifier = Modifier

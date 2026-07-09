@@ -175,18 +175,6 @@ private fun WokHeatRow(rank: Int, recipe: Recipe, count: Int) {
     ) {
         Box(
             modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(accentColor.copy(alpha = 0.15f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("${rank}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = accentColor, style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
-        }
-
-        Spacer(Modifier.width(12.dp))
-
-        Box(
-            modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
                 .background(Sage100)
