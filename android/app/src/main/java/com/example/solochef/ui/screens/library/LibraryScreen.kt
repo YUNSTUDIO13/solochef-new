@@ -42,10 +42,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.solochef.model.CustomRecipeTags
 import com.example.solochef.model.EnergyLevel
 import com.example.solochef.model.Recipe
 import com.example.solochef.R
+import com.example.solochef.storage.LocalFileManager
 import com.example.solochef.ui.theme.*
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +67,16 @@ fun LibraryScreen(
     var showRenamePopup by remember { mutableStateOf(false) }
     var renameText by remember { mutableStateOf("") }
     val searchFocusRequester = remember { FocusRequester() }
+    val context = LocalContext.current
+    var customRecipeTags by remember { mutableStateOf<CustomRecipeTags?>(null) }
+    LaunchedEffect(Unit) { customRecipeTags = LocalFileManager(context).getCustomRecipeTags() }
+
+    val allProcessTags = remember(customRecipeTags) {
+        COOKING_PROCESS_TAGS + (customRecipeTags?.cookingProcessTags?.map { it.name } ?: emptyList())
+    }
+    val allCuisineTags = remember(customRecipeTags) {
+        CUISINE_TAGS + (customRecipeTags?.cuisineTags?.map { it.name } ?: emptyList())
+    }
 
     // Auto-focus search field when popup opens
     LaunchedEffect(showSearchPopup) {
@@ -185,7 +198,7 @@ fun LibraryScreen(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     items(filtered, key = { it.id }) { recipe ->
-                        RecipeCard(recipe = recipe, onClick = { onSelectRecipe(recipe) })
+                        RecipeCard(recipe = recipe, customRecipeTags = customRecipeTags, onClick = { onSelectRecipe(recipe) })
                     }
                 }
             }
@@ -265,20 +278,20 @@ fun LibraryScreen(
                         ) {
                             FilterSection(
                                 title = "烹饪工艺",
-                                tags = COOKING_PROCESS_TAGS,
+                                tags = allProcessTags,
                                 tagCounts = tagCounts,
                                 selected = selectedTags,
                                 onToggle = { viewModel.toggleTag(it) },
-                                onClearAll = { viewModel.clearProcessTags(COOKING_PROCESS_TAGS) }
+                                onClearAll = { viewModel.clearProcessTags(allProcessTags) }
                             )
                             Spacer(Modifier.height(14.dp))
                             FilterSection(
                                 title = "菜系维度",
-                                tags = CUISINE_TAGS,
+                                tags = allCuisineTags,
                                 tagCounts = tagCounts,
                                 selected = selectedTags,
                                 onToggle = { viewModel.toggleTag(it) },
-                                onClearAll = { viewModel.clearCuisineTags(CUISINE_TAGS) }
+                                onClearAll = { viewModel.clearCuisineTags(allCuisineTags) }
                             )
                             Spacer(Modifier.height(14.dp))
                             Text(
@@ -484,9 +497,11 @@ private fun FilterChip(
 }
 
 @Composable
-private fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
-    val processTag = recipe.tags.firstOrNull { it in COOKING_PROCESS_TAGS }
-    val cuisineTag = recipe.tags.firstOrNull { it in CUISINE_TAGS }
+private fun RecipeCard(recipe: Recipe, customRecipeTags: CustomRecipeTags?, onClick: () -> Unit) {
+    val allProcessTags = COOKING_PROCESS_TAGS + (customRecipeTags?.cookingProcessTags?.map { it.name } ?: emptyList())
+    val allCuisineTags = CUISINE_TAGS + (customRecipeTags?.cuisineTags?.map { it.name } ?: emptyList())
+    val processTag = recipe.tags.firstOrNull { it in allProcessTags }
+    val cuisineTag = recipe.tags.firstOrNull { it in allCuisineTags }
     val cookTime = recipe.timeline.sumOf { it.duration } / 60
 
     // 构建三字段文本行（无背景，纯白色文字）

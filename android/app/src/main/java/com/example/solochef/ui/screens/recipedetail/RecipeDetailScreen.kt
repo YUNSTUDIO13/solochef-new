@@ -53,7 +53,11 @@ fun RecipeDetailScreen(
         LocalFileManager(context).getRecipe(initialRecipe.id)?.let { recipe = it }
     }
     var ingLib by remember { mutableStateOf<IngredientLibrary?>(null) }
-    LaunchedEffect(Unit) { ingLib = LocalFileManager(context).getIngredientLibrary() }
+    var customRecipeTags by remember { mutableStateOf<CustomRecipeTags?>(null) }
+    LaunchedEffect(Unit) {
+        ingLib = LocalFileManager(context).getIngredientLibrary()
+        customRecipeTags = LocalFileManager(context).getCustomRecipeTags()
+    }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val totalDuration = remember(recipe) { recipe.timeline.sumOf { it.duration } / 60 }
 
@@ -82,8 +86,10 @@ fun RecipeDetailScreen(
                         }
                     }
                 }
-                val processTag = recipe.tags.firstOrNull { it in COOKING_PROCESS_TAGS }
-                val cuisineTag = recipe.tags.firstOrNull { it in CUISINE_TAGS }
+                val allProcessTags = COOKING_PROCESS_TAGS + (customRecipeTags?.cookingProcessTags?.map { it.name } ?: emptyList())
+                val allCuisineTags = CUISINE_TAGS + (customRecipeTags?.cuisineTags?.map { it.name } ?: emptyList())
+                val processTag = recipe.tags.firstOrNull { it in allProcessTags }
+                val cuisineTag = recipe.tags.firstOrNull { it in allCuisineTags }
                 Column(Modifier.align(Alignment.BottomStart).padding(horizontal = 22.dp, vertical = 22.dp)) {
                     Row(
                         Modifier.fillMaxWidth(),
